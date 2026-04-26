@@ -4,6 +4,7 @@ const WorldSimulator := preload("res://scripts/world_simulator.gd")
 const ApertureService := preload("res://scripts/aperture_service.gd")
 const TribulationService := preload("res://scripts/tribulation_service.gd")
 const CultivationService := preload("res://scripts/cultivation_service.gd")
+const LongevityService := preload("res://scripts/longevity_service.gd")
 
 static func advance_months(state, months: int, reason: String) -> Array:
 	months = max(1, months)
@@ -53,11 +54,15 @@ static func advance_months(state, months: int, reason: String) -> Array:
 	var tribulation_warnings := TribulationService.advance_months(state, months)
 	var cultivation_gain: int = CultivationService.passive_monthly_gain(state, months)
 	CultivationService.add_exp(state, cultivation_gain)
+	var longevity_warnings: Array = LongevityService.advance_months(state, months, reason)
 	var warnings: Array = state.get_warnings()
 	for warning in ecology_warnings:
 		if not warnings.has(warning):
 			warnings.append(warning)
 	for warning in tribulation_warnings:
+		if not warnings.has(warning):
+			warnings.append(warning)
+	for warning in longevity_warnings:
 		if not warnings.has(warning):
 			warnings.append(warning)
 	state.add_log("%s：推进 %d 月，产出仙元石 +%d、灵气 +%d、情报 +%d、修为 +%d。" % [reason, months, stone_income, qi_income, intel_income, cultivation_gain])

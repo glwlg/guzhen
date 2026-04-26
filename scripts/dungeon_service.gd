@@ -25,8 +25,13 @@ static func apply_result(state, encounter: Dictionary, victory: bool) -> String:
 		var gu_reward: String = String(encounter.get("gu_reward", ""))
 		if gu_reward != "" and not bool(GameState.GU_DEFINITIONS.get(gu_reward, {}).get("unique", false)):
 			state.add_gu(gu_reward, 1)
-		if String(encounter.get("branch_id", "")) != "wild":
-			StoryService.mark_victory(state, String(encounter.get("branch_id", "")), String(encounter.get("difficulty_id", "normal")))
+		var story_chapter_id: String = String(encounter.get("story_chapter_id", ""))
+		if story_chapter_id != "":
+			StoryService.mark_story_combat_victory(state, story_chapter_id)
+		else:
+			var branch_id: String = String(encounter.get("branch_id", ""))
+			if DungeonDefs.branch_ids().has(branch_id):
+				StoryService.mark_victory(state, branch_id, String(encounter.get("difficulty_id", "normal")))
 		if state.has_method("adjust_morality"):
 			state.adjust_morality(int(encounter.get("morality_delta", 0)), "副本结算")
 		return _reward_text(encounter.get("rewards", {}), gu_reward, cultivation_gain)

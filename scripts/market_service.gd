@@ -1,5 +1,7 @@
 extends RefCounted
 
+const LongevityService := preload("res://scripts/longevity_service.gd")
+
 const RESOURCE_NAMES := {
 	"immortal_stone": "仙元石",
 	"spirit_qi": "灵气",
@@ -29,9 +31,10 @@ static func cleanup_and_seed(state) -> void:
 	var guard: int = 0
 	while state.market_posts.size() < 8 and guard < 16:
 		guard += 1
-		if state.npcs.is_empty():
+		var alive_npcs := _alive_npcs(state)
+		if alive_npcs.is_empty():
 			return
-		var npc: Dictionary = state.npcs[randi_range(0, state.npcs.size() - 1)]
+		var npc: Dictionary = alive_npcs[randi_range(0, alive_npcs.size() - 1)]
 		state.market_posts.append(generate_npc_post(state, npc, "宝黄天自然刷新"))
 
 static func generate_npc_post(state, npc: Dictionary, reason: String = "") -> Dictionary:
@@ -114,7 +117,7 @@ static func publish_player_post(state, kind: String) -> String:
 			"id": _make_post_id(state),
 			"kind": "抛售",
 			"title": "玩家抛售灵气",
-			"body": "你在宝黄天挂出一批灵气，等待 NPC 吃单。",
+		"body": "你在宝黄天挂出一批灵气，等待人物吃单。",
 			"seller_npc_id": "player",
 			"price": 260,
 			"resource_id": "spirit_qi",
@@ -131,7 +134,7 @@ static func publish_player_post(state, kind: String) -> String:
 			"id": _make_post_id(state),
 			"kind": "求购",
 			"title": "玩家求购炼蛊材料",
-			"body": "你以仙元石托宝黄天收购材料，低信任 NPC 可能借机抬价。",
+		"body": "你以仙元石托宝黄天收购材料，低信任人物可能借机抬价。",
 			"seller_npc_id": "player",
 			"price": 260,
 			"resource_id": "materials",
@@ -144,7 +147,7 @@ static func publish_player_post(state, kind: String) -> String:
 		return "暂不支持这种挂单。"
 	state.market_posts.push_front(post)
 	state.add_log("宝黄天挂单：%s。" % String(post.get("title", "订单")))
-	return "挂单完成，后续世界刻会影响 NPC 响应。"
+	return "挂单完成，后续世界刻会影响人物响应。"
 
 static func apply_post_action(state, post_id: String, action: String) -> String:
 	cleanup_and_seed(state)
@@ -201,6 +204,10 @@ static func _trade_post(state, index: int, post: Dictionary) -> String:
 		return "仙元石不足，无法购买情报。"
 	state.pay(costs)
 	state.market_posts.remove_at(index)
+	if post.has("longevity_lead") or String(post.get("title", "")).find("寿蛊") >= 0 or String(post.get("body", "")).find("延寿") >= 0:
+		var lead_message: String = LongevityService.resolve_market_lead_purchase(state, post)
+		_adjust_npc(state, seller_id, 1, 2, -2)
+		return lead_message
 	if truthfulness < 45 and randi_range(0, 100) < risk:
 		state.add_resource("intel", -min(state.get_resource("intel"), 80))
 		_adjust_npc(state, seller_id, -6, -8, 6)
@@ -246,7 +253,7 @@ static func _spread_rumor(state, index: int, post: Dictionary) -> String:
 	post["risk"] = clampi(int(post.get("risk", 30)) + 10, 0, 100)
 	state.market_posts[index] = post
 	_create_event(state, "谣言扩散", seller_id, int(post.get("risk", 40)))
-	state.add_log("宝黄天谣言：围绕%s扩散，相关 NPC 信任下降。" % String(post.get("title", "订单")))
+	state.add_log("宝黄天谣言：围绕%s扩散，相关人物信任下降。" % String(post.get("title", "订单")))
 	return "谣言已散布，对方信任下降，但市场风险上升。"
 
 static func find_post_index(state, post_id: String) -> int:
@@ -269,6 +276,8 @@ static func seller_name(state, npc_id: String) -> String:
 	var index: int = find_npc_index(state, npc_id)
 	if index >= 0:
 		var npc: Dictionary = state.npcs[index]
+		if not bool(npc.get("alive", true)):
+			return "已死人物"
 		return String(npc.get("name", "匿名"))
 	return "匿名"
 
@@ -293,6 +302,14 @@ static func _adjust_npc(state, npc_id: String, relation_delta: int, trust_delta:
 	npc["urgency"] = clampi(int(npc.get("urgency", 50)) + urgency_delta, 0, 100)
 	npc["last_action"] = "宝黄天交易关系变化"
 	state.npcs[index] = npc
+
+static func _alive_npcs(state) -> Array:
+	var result: Array = []
+	for raw_npc in state.npcs:
+		var npc: Dictionary = raw_npc
+		if bool(npc.get("alive", true)):
+			result.append(npc)
+	return result
 
 static func _create_event(state, kind: String, source_npc_id: String, severity: int) -> void:
 	state.world_events.push_front({

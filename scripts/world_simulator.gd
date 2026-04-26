@@ -2,12 +2,13 @@ extends RefCounted
 
 const GameState := preload("res://scripts/game_state.gd")
 const MarketService := preload("res://scripts/market_service.gd")
+const LongevityService := preload("res://scripts/longevity_service.gd")
 
-const EVENT_KINDS := ["寿蛊线索", "仙蛊出世", "NPC渡劫", "宗门冲突", "假情报陷阱", "资源点争夺"]
+const EVENT_KINDS := ["寿蛊线索", "仙蛊出世", "人物渡劫", "宗门冲突", "假情报陷阱", "资源点争夺"]
 const REGION_PRESSURE_EFFECTS := {
 	"寿蛊线索": {"intel_price": 10},
 	"仙蛊出世": {"market_risk": 16},
-	"NPC渡劫": {"market_risk": 10},
+	"人物渡劫": {"market_risk": 10},
 	"宗门冲突": {"market_risk": 12},
 	"假情报陷阱": {"intel_price": -6},
 	"资源点争夺": {"material_price": 8}
@@ -32,6 +33,8 @@ static func advance_months(state, months: int) -> Array:
 static func _advance_npcs_one_month(state, world_logs: Array) -> void:
 	for i in range(state.npcs.size()):
 		var npc: Dictionary = state.npcs[i]
+		if not bool(npc.get("alive", true)):
+			continue
 		var resources: Dictionary = npc.get("resources", {})
 		var rank: int = int(npc.get("rank", npc.get("realm_index", 1)))
 		var lifespan: int = max(0, int(npc.get("lifespan_days", 0)) - 30)
@@ -68,11 +71,14 @@ static func _choose_npc_action(state, npc: Dictionary, world_logs: Array) -> voi
 	var relation: int = int(npc.get("relation", 0))
 	var roll: int = randi_range(1, 100)
 
+	if LongevityService.npc_longevity_action(state, npc, world_logs):
+		return
+
 	if urgency > 74 or roll <= 34:
-		var post: Dictionary = MarketService.generate_npc_post(state, npc, "NPC行动")
+		var post: Dictionary = MarketService.generate_npc_post(state, npc, "人物行动")
 		state.market_posts.push_front(post)
 		npc["last_action"] = "发布宝黄天订单：%s" % String(post.get("title", "订单"))
-		world_logs.append("NPC行动：%s发布%s。" % [String(npc.get("name", "某人")), String(post.get("kind", "订单"))])
+		world_logs.append("人物行动：%s发布%s。" % [String(npc.get("name", "某人")), String(post.get("kind", "订单"))])
 		return
 
 	if relation < -28 and trust < 24 and urgency > 55 and roll <= 62:
@@ -127,7 +133,7 @@ static func _maybe_refine_unique_gu(state, npc: Dictionary, world_logs: Array) -
 		var owned_gu: Array = npc.get("owned_gu", [])
 		owned_gu.append(target_gu)
 		npc["owned_gu"] = owned_gu
-		state.unique_gu[target_gu] = String(npc.get("name", "NPC"))
+		state.unique_gu[target_gu] = String(npc.get("name", "人物"))
 		var gu_def: Dictionary = GameState.GU_DEFINITIONS.get(target_gu, {})
 		npc["last_action"] = "炼成唯一仙蛊：%s" % String(gu_def.get("name", target_gu))
 		npc["current_goal"] = "巩固唯一仙蛊优势"
@@ -147,12 +153,14 @@ static func _settle_player_posts(state, world_logs: Array) -> void:
 		var chance: int = 32
 		for raw_npc in state.npcs:
 			var npc: Dictionary = raw_npc
+			if not bool(npc.get("alive", true)):
+				continue
 			chance += 2 if int(npc.get("trust", 0)) >= 45 else 0
 		if randi_range(1, 100) > clampi(chance, 20, 70):
 			continue
 		if String(post.get("kind", "")) == "抛售":
 			state.add_resource("immortal_stone", int(post.get("price", 0)))
-			world_logs.append("宝黄天成交：你的灵气挂单被 NPC 买走。")
+			world_logs.append("宝黄天成交：你的灵气挂单被人物买走。")
 		elif String(post.get("kind", "")) == "求购":
 			state.add_resource(String(post.get("resource_id", "materials")), int(post.get("quantity", 1)))
 			world_logs.append("宝黄天成交：你的求购单得到回应。")
@@ -175,11 +183,12 @@ static func _maybe_spawn_world_event(state, world_logs: Array) -> void:
 	var kind: String = EVENT_KINDS[randi_range(0, EVENT_KINDS.size() - 1)]
 	var source_id: String = ""
 	var target_id: String = ""
-	if not state.npcs.is_empty():
-		var source_npc: Dictionary = state.npcs[randi_range(0, state.npcs.size() - 1)]
+	var alive_npcs := _alive_npcs(state)
+	if not alive_npcs.is_empty():
+		var source_npc: Dictionary = alive_npcs[randi_range(0, alive_npcs.size() - 1)]
 		source_id = String(source_npc.get("id", ""))
-		if state.npcs.size() > 1:
-			var target_npc: Dictionary = state.npcs[randi_range(0, state.npcs.size() - 1)]
+		if alive_npcs.size() > 1:
+			var target_npc: Dictionary = alive_npcs[randi_range(0, alive_npcs.size() - 1)]
 			target_id = String(target_npc.get("id", ""))
 	_create_event(state, kind, source_id, target_id, randi_range(34, 86))
 	world_logs.append("世界事件：%s在五域发酵。" % kind)
@@ -203,6 +212,14 @@ static func _create_event(state, kind: String, source_npc_id: String, target_npc
 		"resolved": false,
 		"effects": REGION_PRESSURE_EFFECTS.get(kind, {"market_risk": int(severity / 10)})
 	})
+
+static func _alive_npcs(state) -> Array:
+	var result: Array = []
+	for raw_npc in state.npcs:
+		var npc: Dictionary = raw_npc
+		if bool(npc.get("alive", true)):
+			result.append(npc)
+	return result
 
 static func _pick_region_id(state) -> String:
 	if state.world_regions.is_empty():

@@ -14,10 +14,11 @@ const DAO_SCHOOLS := ["剑道", "炼道", "奴道", "智道", "运道"]
 
 const GU_DEFINITIONS := {
 	"sword_core": {
-		"name": "剑道仙蛊",
+		"name": "剑光蛊",
 		"type": "core",
 		"school": "剑道",
-		"grade": "仙蛊",
+		"grade": "凡蛊",
+		"rank": 1,
 		"unique": false,
 		"power": 620,
 		"spirit_cost": 120,
@@ -26,10 +27,11 @@ const GU_DEFINITIONS := {
 		"description": "生成一道高威力剑气，是最稳定的起手主程序。"
 	},
 	"refine_core": {
-		"name": "炉心仙蛊",
+		"name": "炉火蛊",
 		"type": "core",
 		"school": "炼道",
-		"grade": "仙蛊",
+		"grade": "凡蛊",
+		"rank": 1,
 		"unique": false,
 		"power": 420,
 		"spirit_cost": 95,
@@ -38,10 +40,11 @@ const GU_DEFINITIONS := {
 		"description": "以炼化之火持续灼烧目标，并提升炼蛊成功率。"
 	},
 	"enslave_core": {
-		"name": "万兽魂蛊",
+		"name": "兽魂蛊",
 		"type": "core",
 		"school": "奴道",
-		"grade": "仙蛊",
+		"grade": "凡蛊",
+		"rank": 1,
 		"unique": false,
 		"power": 360,
 		"spirit_cost": 105,
@@ -50,10 +53,11 @@ const GU_DEFINITIONS := {
 		"description": "召唤魂影牵制敌人，适合拖延与围杀。"
 	},
 	"wisdom_core": {
-		"name": "推演星蛊",
+		"name": "星念蛊",
 		"type": "core",
 		"school": "智道",
-		"grade": "仙蛊",
+		"grade": "凡蛊",
+		"rank": 1,
 		"unique": false,
 		"power": 390,
 		"spirit_cost": 90,
@@ -62,10 +66,11 @@ const GU_DEFINITIONS := {
 		"description": "推演敌阵破绽，提升奇袭收益并强化情报流。"
 	},
 	"luck_core": {
-		"name": "转运金蛊",
+		"name": "小运蛊",
 		"type": "core",
 		"school": "运道",
-		"grade": "仙蛊",
+		"grade": "凡蛊",
+		"rank": 1,
 		"unique": false,
 		"power": 340,
 		"spirit_cost": 85,
@@ -78,6 +83,7 @@ const GU_DEFINITIONS := {
 		"type": "plugin",
 		"school": "剑道",
 		"grade": "凡蛊",
+		"rank": 1,
 		"power": 80,
 		"spirit_cost": 35,
 		"stability": -4,
@@ -90,6 +96,7 @@ const GU_DEFINITIONS := {
 		"type": "plugin",
 		"school": "剑道",
 		"grade": "凡蛊",
+		"rank": 1,
 		"power": 120,
 		"spirit_cost": 80,
 		"stability": -12,
@@ -102,6 +109,7 @@ const GU_DEFINITIONS := {
 		"type": "plugin",
 		"school": "剑道",
 		"grade": "凡蛊",
+		"rank": 1,
 		"power": 110,
 		"spirit_cost": 60,
 		"stability": -8,
@@ -114,6 +122,7 @@ const GU_DEFINITIONS := {
 		"type": "plugin",
 		"school": "智道",
 		"grade": "凡蛊",
+		"rank": 1,
 		"power": 50,
 		"spirit_cost": 55,
 		"stability": -7,
@@ -126,6 +135,7 @@ const GU_DEFINITIONS := {
 		"type": "plugin",
 		"school": "运道",
 		"grade": "凡蛊",
+		"rank": 1,
 		"power": 20,
 		"spirit_cost": 40,
 		"stability": 12,
@@ -138,6 +148,7 @@ const GU_DEFINITIONS := {
 		"type": "core",
 		"school": "智道",
 		"grade": "仙阶·上品",
+		"rank": 6,
 		"unique": true,
 		"power": 920,
 		"spirit_cost": 180,
@@ -150,12 +161,68 @@ const GU_DEFINITIONS := {
 		"type": "core",
 		"school": "剑道",
 		"grade": "仙阶·中品",
+		"rank": 6,
 		"unique": true,
 		"power": 780,
 		"spirit_cost": 150,
 		"stability": 74,
 		"cooldown": 2.0,
 		"description": "以寿元和灵气催生血剑，威力惊人但反噬明显。"
+	},
+	"liquor_worm": {
+		"name": "酒虫",
+		"type": "plugin",
+		"school": "酒道",
+		"grade": "凡蛊",
+		"rank": 1,
+		"unique": false,
+		"power": 35,
+		"spirit_cost": 25,
+		"stability": 8,
+		"cooldown": 0.0,
+		"tag": "spirit",
+		"description": "古月山寨早期机缘，可辅助提炼真元并提高低阶修行效率。"
+	},
+	"substitute_life_gu": {
+		"name": "替命蛊",
+		"type": "plugin",
+		"school": "命道",
+		"grade": "凡蛊",
+		"rank": 5,
+		"unique": false,
+		"power": 10,
+		"spirit_cost": 160,
+		"stability": 18,
+		"cooldown": 0.0,
+		"tag": "guard",
+		"description": "战斗死亡时可替主人挡下一次死劫，使用后消耗。"
+	},
+	"time_anchor_gu": {
+		"name": "宙锚蛊",
+		"type": "plugin",
+		"school": "宙道",
+		"grade": "凡蛊",
+		"rank": 5,
+		"unique": false,
+		"power": 40,
+		"spirit_cost": 180,
+		"stability": -16,
+		"cooldown": 0.0,
+		"tag": "crit",
+		"description": "合炼春秋蝉的宙道锚点，单独使用极不稳定。"
+	},
+	"spring_autumn_cicada": {
+		"name": "春秋蝉",
+		"type": "core",
+		"school": "宙道",
+		"grade": "仙蛊",
+		"rank": 6,
+		"unique": true,
+		"power": 120,
+		"spirit_cost": 999,
+		"stability": 18,
+		"cooldown": 8.0,
+		"description": "关键唯一仙蛊。战斗死亡时可触发代价极高的回档分支。"
 	}
 }
 
@@ -163,22 +230,34 @@ const REFINE_RECIPES := {
 	"taixu_immortal": {
 		"name": "炼制太虚玄灵蛊",
 		"result": "taixu_immortal",
+		"requires_gu": {"wisdom_core": 1, "stealth_plugin": 1, "chase_plugin": 1},
 		"costs": {"immortal_stone": 780, "spirit_qi": 3600, "intel": 180, "materials": 4},
 		"base_success": 0.58,
 		"months": 3,
-		"description": "全局唯一。成功后可作为高阶杀招核心，失败会损失资源并扣寿元。"
+		"description": "全局唯一六转仙蛊。需以前置蛊虫、智道道痕、太虚环境和材料合炼，失败会损失资源并扣寿元。"
 	},
 	"blood_sword": {
 		"name": "炼制化血神剑蛊",
 		"result": "blood_sword",
+		"requires_gu": {"sword_core": 1, "pierce_plugin": 1, "chase_plugin": 1},
 		"costs": {"immortal_stone": 520, "spirit_qi": 2200, "intel": 120, "materials": 3},
 		"base_success": 0.66,
 		"months": 2,
-		"description": "全局唯一。剑道爆发核心，适合快速结束战斗。"
+		"description": "全局唯一六转仙蛊。以剑道核心蛊和血炼配方合炼，适合快速结束战斗。"
+	},
+	"spring_autumn_cicada": {
+		"name": "合炼春秋蝉",
+		"result": "spring_autumn_cicada",
+		"requires_gu": {"time_anchor_gu": 1, "luck_core": 1, "wisdom_core": 1},
+		"costs": {"immortal_stone": 2200, "spirit_qi": 12000, "intel": 960, "materials": 12},
+		"base_success": 0.18,
+		"months": 6,
+		"description": "关键唯一六转仙蛊。需要宙道锚点、运道机缘和智道推演，失败反噬极重。"
 	},
 	"chase_plugin": {
 		"name": "补炼追踪凡蛊",
 		"result": "chase_plugin",
+		"requires_gu": {},
 		"costs": {"immortal_stone": 120, "spirit_qi": 700, "intel": 25, "materials": 1},
 		"base_success": 0.86,
 		"months": 1,
@@ -187,6 +266,7 @@ const REFINE_RECIPES := {
 	"split_plugin": {
 		"name": "补炼分裂凡蛊",
 		"result": "split_plugin",
+		"requires_gu": {},
 		"costs": {"immortal_stone": 160, "spirit_qi": 900, "intel": 40, "materials": 1},
 		"base_success": 0.78,
 		"months": 1,
@@ -202,6 +282,7 @@ var gu_inventory := {}
 var unique_gu := {}
 var killer_moves := []
 var active_killer_move := -1
+var active_combat_moves := []
 var world_month := 0
 var logs := []
 var npc := {}
@@ -236,6 +317,7 @@ func reset_defaults() -> void:
 	created = false
 	world_month = 0
 	active_killer_move = -1
+	active_combat_moves = []
 	character = {
 		"name": "顾无生",
 		"gender": "男",
@@ -308,8 +390,28 @@ func ensure_world_defaults() -> void:
 		world_regions = _default_world_regions()
 	if factions.is_empty():
 		factions = _default_factions()
+	else:
+		var faction_ids := {}
+		for raw_faction in factions:
+			var faction: Dictionary = raw_faction
+			faction_ids[String(faction.get("id", ""))] = true
+		for raw_default_faction in _default_factions():
+			var default_faction: Dictionary = raw_default_faction
+			var default_faction_id := String(default_faction.get("id", ""))
+			if default_faction_id != "" and not faction_ids.has(default_faction_id):
+				factions.append(default_faction)
 	if npcs.is_empty():
 		npcs = _default_npcs()
+	else:
+		var npc_ids := {}
+		for raw_npc in npcs:
+			var existing_npc: Dictionary = raw_npc
+			npc_ids[String(existing_npc.get("id", ""))] = true
+		for raw_default_npc in _default_npcs():
+			var default_npc: Dictionary = raw_default_npc
+			var default_npc_id := String(default_npc.get("id", ""))
+			if default_npc_id != "" and not npc_ids.has(default_npc_id):
+				npcs.append(default_npc)
 	if market_posts.is_empty():
 		market_posts = _default_market_posts()
 	if world_events.is_empty():
@@ -318,7 +420,7 @@ func ensure_world_defaults() -> void:
 		var first_npc: Dictionary = npcs[0]
 		npc = {"name": first_npc.get("name", "玄雾子"), "relation": first_npc.get("relation", 0), "trust": first_npc.get("trust", 0), "urgency": first_npc.get("urgency", 50)}
 	if story_progress.is_empty():
-		story_progress = {"three_kings_mountain": {"unlocked": true, "intro_seen": false, "rumor_month": world_month, "branches": {}}}
+		story_progress = {}
 	if dungeon_progress.is_empty():
 		dungeon_progress = {
 			"dog_king": {"attempts": 0, "victories": 0, "best_difficulty": "", "cleared": false},
@@ -331,6 +433,10 @@ func ensure_world_defaults() -> void:
 			npc_state["rank"] = clampi(int(npc_state.get("realm_index", 1)), 1, 9)
 		if not npc_state.has("rank_stage"):
 			npc_state["rank_stage"] = 1
+		if not npc_state.has("met"):
+			npc_state["met"] = false
+		if not npc_state.has("alive"):
+			npc_state["alive"] = true
 		npcs[i] = npc_state
 	if typeof(gu_ecology) != TYPE_DICTIONARY:
 		gu_ecology = {}
@@ -340,6 +446,9 @@ func ensure_world_defaults() -> void:
 		defense_scripts = []
 	if typeof(runtime_injection_history) != TYPE_ARRAY:
 		runtime_injection_history = []
+	if typeof(active_combat_moves) != TYPE_ARRAY:
+		active_combat_moves = []
+	_cleanup_active_combat_moves()
 	if typeof(ascension_state) != TYPE_DICTIONARY:
 		ascension_state = {}
 	if typeof(breakthrough_history) != TYPE_ARRAY:
@@ -374,16 +483,19 @@ func _default_factions() -> Array:
 		{"id": "shadow_sect", "name": "幽泉宗", "stance": -12, "wealth": 64, "tension": 48},
 		{"id": "heavenly_court", "name": "天庭余脉", "stance": -28, "wealth": 82, "tension": 55},
 		{"id": "blood_alliance", "name": "血盟", "stance": -42, "wealth": 58, "tension": 72},
-		{"id": "loose_cultivators", "name": "散修市盟", "stance": 8, "wealth": 45, "tension": 38}
+		{"id": "loose_cultivators", "name": "散修市盟", "stance": 8, "wealth": 45, "tension": 38},
+		{"id": "gu_yue_clan", "name": "古月一族", "stance": 0, "wealth": 36, "tension": 52}
 	]
 
 func _default_npcs() -> Array:
 	return [
-		{"id": "xuanwuzi", "name": "玄雾子", "faction": "shadow_sect", "rank": 5, "rank_stage": 2, "realm_index": 5, "lifespan_days": 5 * 360 + 90, "resources": {"immortal_stone": 920, "spirit_qi": 18000, "intel": 360, "materials": 5}, "personality": "逐利谨慎", "relation": 18, "trust": 36, "urgency": 64, "known_intel": ["极北遗迹入口"], "owned_gu": [], "current_goal": "搜集寿蛊线索", "last_action": "试探玩家底价"},
-		{"id": "chixiao", "name": "赤霄散人", "faction": "blood_alliance", "rank": 4, "rank_stage": 3, "realm_index": 4, "lifespan_days": 2 * 360 + 180, "resources": {"immortal_stone": 620, "spirit_qi": 12000, "intel": 180, "materials": 3}, "personality": "激进嗜战", "relation": -22, "trust": 18, "urgency": 78, "known_intel": ["血道残图"], "owned_gu": [], "current_goal": "夺取仙元石", "last_action": "在北原伏击商队"},
-		{"id": "baiwusheng", "name": "白无生", "faction": "heavenly_court", "rank": 6, "rank_stage": 1, "realm_index": 6, "lifespan_days": 8 * 360 + 40, "resources": {"immortal_stone": 1600, "spirit_qi": 26000, "intel": 640, "materials": 8}, "personality": "冷静算计", "relation": -8, "trust": 28, "urgency": 42, "known_intel": ["太虚玄灵蛊配方"], "owned_gu": [], "current_goal": "竞速炼制唯一仙蛊", "last_action": "收购九幽玄铁"},
-		{"id": "qingluan", "name": "青鸾仙子", "faction": "loose_cultivators", "rank": 4, "rank_stage": 2, "realm_index": 4, "lifespan_days": 11 * 360 + 120, "resources": {"immortal_stone": 740, "spirit_qi": 21000, "intel": 420, "materials": 6}, "personality": "交易优先", "relation": 24, "trust": 52, "urgency": 34, "known_intel": ["东海灵泉潮汐"], "owned_gu": [], "current_goal": "稳定出售资源", "last_action": "发布灵泉结晶订单"},
-		{"id": "guixin", "name": "归墟子", "faction": "loose_cultivators", "rank": 5, "rank_stage": 0, "realm_index": 5, "lifespan_days": 3 * 360 + 20, "resources": {"immortal_stone": 480, "spirit_qi": 9000, "intel": 520, "materials": 2}, "personality": "情报投机", "relation": 4, "trust": 22, "urgency": 86, "known_intel": ["疑似寿蛊假线"], "owned_gu": [], "current_goal": "散布真假情报换寿元", "last_action": "匿名抛售寿蛊线索"}
+		{"id": "gu_yue_elder", "name": "古月族老", "faction": "gu_yue_clan", "rank": 3, "rank_stage": 2, "realm_index": 3, "lifespan_days": 4 * 360 + 80, "resources": {"immortal_stone": 380, "spirit_qi": 9000, "intel": 260, "materials": 4}, "personality": "守旧谨慎", "relation": 2, "trust": 24, "urgency": 46, "known_intel": ["山寨族学名额"], "owned_gu": [], "current_goal": "维持族规", "last_action": "观察新入局者", "met": false, "alive": true},
+		{"id": "branch_clansman", "name": "旁支少年", "faction": "gu_yue_clan", "rank": 1, "rank_stage": 1, "realm_index": 1, "lifespan_days": 36 * 360, "resources": {"immortal_stone": 90, "spirit_qi": 2200, "intel": 120, "materials": 1}, "personality": "知恩但胆怯", "relation": 12, "trust": 38, "urgency": 34, "known_intel": ["山寨暗道"], "owned_gu": [], "current_goal": "在山寨变局中活下去", "last_action": "等待可依靠的人", "met": false, "alive": true},
+		{"id": "xuanwuzi", "name": "玄雾子", "faction": "shadow_sect", "rank": 5, "rank_stage": 2, "realm_index": 5, "lifespan_days": 5 * 360 + 90, "resources": {"immortal_stone": 920, "spirit_qi": 18000, "intel": 360, "materials": 5}, "personality": "逐利谨慎", "relation": 18, "trust": 36, "urgency": 64, "known_intel": ["极北遗迹入口"], "owned_gu": [], "current_goal": "搜集寿蛊线索", "last_action": "试探玩家底价", "met": false, "alive": true},
+		{"id": "chixiao", "name": "赤霄散人", "faction": "blood_alliance", "rank": 4, "rank_stage": 3, "realm_index": 4, "lifespan_days": 2 * 360 + 180, "resources": {"immortal_stone": 620, "spirit_qi": 12000, "intel": 180, "materials": 3}, "personality": "激进嗜战", "relation": -22, "trust": 18, "urgency": 78, "known_intel": ["血道残图"], "owned_gu": [], "current_goal": "夺取仙元石", "last_action": "在北原伏击商队", "met": false, "alive": true},
+		{"id": "baiwusheng", "name": "白无生", "faction": "heavenly_court", "rank": 6, "rank_stage": 1, "realm_index": 6, "lifespan_days": 8 * 360 + 40, "resources": {"immortal_stone": 1600, "spirit_qi": 26000, "intel": 640, "materials": 8}, "personality": "冷静算计", "relation": -8, "trust": 28, "urgency": 42, "known_intel": ["太虚玄灵蛊配方"], "owned_gu": [], "current_goal": "竞速炼制唯一仙蛊", "last_action": "收购九幽玄铁", "met": false, "alive": true},
+		{"id": "qingluan", "name": "青鸾仙子", "faction": "loose_cultivators", "rank": 4, "rank_stage": 2, "realm_index": 4, "lifespan_days": 11 * 360 + 120, "resources": {"immortal_stone": 740, "spirit_qi": 21000, "intel": 420, "materials": 6}, "personality": "交易优先", "relation": 24, "trust": 52, "urgency": 34, "known_intel": ["东海灵泉潮汐"], "owned_gu": [], "current_goal": "稳定出售资源", "last_action": "发布灵泉结晶订单", "met": false, "alive": true},
+		{"id": "guixin", "name": "归墟子", "faction": "loose_cultivators", "rank": 5, "rank_stage": 0, "realm_index": 5, "lifespan_days": 3 * 360 + 20, "resources": {"immortal_stone": 480, "spirit_qi": 9000, "intel": 520, "materials": 2}, "personality": "情报投机", "relation": 4, "trust": 22, "urgency": 86, "known_intel": ["疑似寿蛊假线"], "owned_gu": [], "current_goal": "散布真假情报换寿元", "last_action": "匿名抛售寿蛊线索", "met": false, "alive": true}
 	]
 
 func _default_market_posts() -> Array:
@@ -494,6 +606,12 @@ func get_gu_name(id: String) -> String:
 	var def: Dictionary = GU_DEFINITIONS.get(id, {})
 	return String(def.get("name", id))
 
+func get_gu_rank_text(id: String) -> String:
+	var def: Dictionary = GU_DEFINITIONS.get(id, {})
+	var rank: int = clampi(int(def.get("rank", 1)), 1, 9)
+	var tier := "仙蛊" if rank >= 6 else "凡蛊"
+	return "%s%s" % [RANK_NAMES[rank - 1], tier]
+
 func get_gu_ids(type_filter: String = "") -> Array:
 	var ids: Array = []
 	for id in gu_inventory.keys():
@@ -551,6 +669,8 @@ func _join_strings(parts: Array, separator: String) -> String:
 func add_killer_move(move: Dictionary) -> void:
 	killer_moves.append(move)
 	active_killer_move = killer_moves.size() - 1
+	if active_combat_moves.size() < 5:
+		active_combat_moves.append(active_killer_move)
 	add_log("保存杀招：%s，稳定度 %d%%。" % [move.get("name", "未命名杀招"), int(move.get("stability", 0))])
 
 func get_active_killer_move() -> Dictionary:
@@ -560,6 +680,36 @@ func get_active_killer_move() -> Dictionary:
 		active_killer_move = 0
 		return killer_moves[0]
 	return SchoolLoadouts.default_move_for_school(self, String(character.get("primary_school", "剑道")))
+
+func get_combat_killer_moves() -> Array:
+	_cleanup_active_combat_moves()
+	var moves: Array = []
+	for raw_index in active_combat_moves:
+		var index := int(raw_index)
+		if index >= 0 and index < killer_moves.size():
+			moves.append(killer_moves[index])
+	return moves
+
+func set_combat_move_enabled(index: int, enabled: bool) -> void:
+	_cleanup_active_combat_moves()
+	if index < 0 or index >= killer_moves.size():
+		return
+	if enabled:
+		if not active_combat_moves.has(index) and active_combat_moves.size() < 5:
+			active_combat_moves.append(index)
+	else:
+		active_combat_moves.erase(index)
+	_cleanup_active_combat_moves()
+
+func _cleanup_active_combat_moves() -> void:
+	var cleaned: Array = []
+	for raw_index in active_combat_moves:
+		var index := int(raw_index)
+		if index >= 0 and index < killer_moves.size() and not cleaned.has(index) and cleaned.size() < 5:
+			cleaned.append(index)
+	if cleaned.is_empty() and not killer_moves.is_empty():
+		cleaned.append(clampi(active_killer_move, 0, killer_moves.size() - 1))
+	active_combat_moves = cleaned
 
 func add_defense_script(move: Dictionary) -> void:
 	var script := move.duplicate(true)
@@ -585,7 +735,7 @@ func get_warnings() -> Array:
 	if int(aperture.get("stability", 0)) < 45:
 		warnings.append("仙窍生态濒临崩溃，资源产出下降。")
 	if int(character.get("lifespan_days", 0)) < 720:
-		warnings.append("寿元不足两年，NPC 会更容易背叛。")
+		warnings.append("寿元不足两年，人物会更容易背叛。")
 	var lifespan_warning: String = LongevityService.current_warning(self)
 	if lifespan_warning != "":
 		warnings.append(lifespan_warning)
@@ -611,6 +761,7 @@ func to_dict() -> Dictionary:
 		"unique_gu": unique_gu,
 		"killer_moves": killer_moves,
 		"active_killer_move": active_killer_move,
+		"active_combat_moves": active_combat_moves,
 		"world_month": world_month,
 		"logs": logs,
 		"npc": npc,
@@ -655,6 +806,8 @@ static func from_dict(data: Dictionary) -> RefCounted:
 	if typeof(data.get("killer_moves", null)) == TYPE_ARRAY:
 		state.killer_moves = data["killer_moves"]
 	state.active_killer_move = int(data.get("active_killer_move", state.active_killer_move))
+	if typeof(data.get("active_combat_moves", null)) == TYPE_ARRAY:
+		state.active_combat_moves = data["active_combat_moves"]
 	state.world_month = int(data.get("world_month", state.world_month))
 	if typeof(data.get("logs", null)) == TYPE_ARRAY:
 		state.logs = data["logs"]

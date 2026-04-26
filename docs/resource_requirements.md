@@ -123,62 +123,40 @@
 
 ## P4：角色与战斗精灵图
 
-当前战斗里玩家和敌人仍是静态 PNG。要做出移动、追击、施放杀招、受击和死亡反馈，需要生成可切帧的 sprite sheet。下面这批素材不是普通立绘，而是 Godot 战斗场景直接使用的 2D 精灵图。
+当前战斗精灵图改用 `agent-sprite-forge/generate2dsprite` 的小表工作流：先生成低复杂度、可人工检查的 compact sheet，再本地抠底、缩放和导入。不要再一次性要求 `2048x10240` 或 `2560x12800` 这类超大整表；那会让模型把角色细节压得很低，切帧也更难校准。
 
 ### 统一精灵图规范
 
-- 视角：斜俯视 2.5D，约 45° 俯角，匹配当前战斗地图 `res://assets/backgrounds/battle_ruins.png`。不要正面半身立绘，不要纯横版侧视。
-- 画幅：透明底 PNG，单帧建议 `256x256`。角色完整身体高度控制在 150-190px，脚底留在画面下方中心，四周至少 24px 透明安全边。
-- 锚点：每帧脚底中心对齐到单元格坐标 `(128, 198)` 附近。所有动作和方向必须保持同一个脚底锚点，避免动画播放时角色跳动。
-- 光影：左上或正上冷光，脚下可以带很淡的软阴影，但阴影必须在同一帧透明底内，不要画死在不透明背景上。
-- 风格：暗黑修仙、破损法袍、旧金/青绿法力纹路，细节清晰但不要过度写实到缩小后糊成一团。
-- 动作速度：每个动作循环首尾要能自然衔接。`idle` 不要大幅位移；`walk` 脚步要有明显重心变化；`cast` 要有起手、蓄力、出手三个阶段。
-- 方向：优先 8 方向：`down`、`down_right`、`right`、`up_right`、`up`、`up_left`、`left`、`down_left`。如果生成成本高，最低可交付 4 方向：`down`、`right`、`up`、`down_right`，代码后续可镜像补左向。
-- 文件布局：推荐大图按“动作 + 方向”分行，每行固定帧数。列数不足的动作也要补透明帧或重复末帧，保持整张表规则。
+- 生成背景：统一要求纯色 `#FF00FF` 背景，无渐变、无阴影、无格线；生成后本地转透明 PNG。最终进入项目的文件必须是透明底。
+- 角色规格：普通角色单帧 `256x256`，整表 `1024x1024`；精英/大型角色单帧 `320x320`，整表 `1280x1280`。
+- 角色排布：4 列 x 4 行。行顺序固定为 `down`、`left`、`right`、`up`；列顺序固定为 `neutral`、`left_step`、`neutral`、`right_step`。
+- 动作策略：当前代码用这张 compact sheet 驱动站立、移动、施法、受击等基础朝向表现。后续如果需要更强动作，再按同样规范追加单独的 `cast_*.png`、`hit_*.png`、`death_*.png` 小 strip，不要回到超大整表。
+- 视角：斜俯视 2.5D，约 45° 俯角，匹配 `res://assets/backgrounds/battle_ruins.png`。不要正面半身立绘，不要纯横版侧视。
+- 锚点：每帧脚底/漂浮底部锚点保持在单元格下方中心附近，角色不得跨出单元格，四周保留足够透明边。
+- 风格：暗黑修仙、黑金/旧金衣饰、青绿法力点缀，像素精灵要清晰可读，缩小到战斗场景尺寸后仍能分辨轮廓。
+- 生成提示词必须强调：`exactly 4 columns and 4 rows`、`no grid lines`、`same character identity`、`same bounding box`、`same pixel scale`、`no text`、`solid flat #FF00FF background`。
 
-推荐 sheet 排布：
+### 角色 compact sheet
 
-| 动作 | 行顺序 | 每方向帧数 | 用途 |
-|---|---:|---:|---|
-| `idle` | 0-7 | 6 帧 | 站立呼吸、衣摆轻动 |
-| `walk` | 8-15 | 8 帧 | WASD 移动、敌人追击 |
-| `cast` | 16-23 | 8 帧 | 释放杀招/法术 |
-| `hit` | 24-31 | 4 帧，后 4 格可重复末帧或透明 | 受击硬直 |
-| `death` | 32-39 | 8 帧 | 倒地/消散 |
-
-如果严格使用上面的 8 方向和固定 8 列，整张图规格为 `2048x10240`：每帧 `256x256`，8 列，40 行。也可以拆成多个较小文件，路径按下表。
-
-| 目标路径 | 素材要求 | 帧规格与排布 | 参考来源 |
+| 目标路径 | 精灵图描述 | 帧规格与排布 | 生成提示词要点 |
 |---|---|---:|---|
-| `res://assets/characters/sheets/player_male_sheet.png` | 男主战斗精灵图。黑金法袍、剑道/散修气质，手持或背负剑形蛊器，动作清晰。必须包含 idle、walk、cast、hit、death。 | 256x256 单帧；8方向；每方向 8 列；推荐 2048x10240 PNG 透明底 | `创建角色.png`、`战斗.png`、当前男主静态图 |
-| `res://assets/characters/sheets/player_female_sheet.png` | 女主战斗精灵图。与男主同一体型比例和锚点规范，可有发带/长袖/轻甲差异。必须包含 idle、walk、cast、hit、death。 | 256x256 单帧；8方向；每方向 8 列；推荐 2048x10240 PNG 透明底 | `创建角色.png`、`战斗.png`、当前女主静态图 |
-| `res://assets/characters/sheets/enemy_cultivator_sheet.png` | 通用敌方蛊师/蛊仙精灵图。暗紫黑法袍、敌意法力光，轮廓要和玩家明显区分。必须包含 idle、walk、cast、hit、death。 | 256x256 单帧；8方向；每方向 8 列；推荐 2048x10240 PNG 透明底 | `战斗.png`、当前敌人静态图 |
-| `res://assets/characters/sheets/enemy_elite_sheet.png` | 精英敌人精灵图。比通用敌人更高阶，带更明显魂影、披风或法阵碎片。用于后续 Boss/高境界 NPC 袭击。 | 320x320 单帧；8方向；每方向 8 列；推荐 2560x12800 PNG 透明底 | `战斗.png`、NPC 利益博弈 |
-| `res://assets/characters/sheets/npc_cultivator_sheet.png` | 中立/盟友 NPC 战斗精灵图。不要太像敌人，可用灰金/青色法袍。用于联合作战或 NPC 事件。 | 256x256 单帧；8方向；每方向 8 列；推荐 2048x10240 PNG 透明底 | `npc对话.png`、`战斗.png` |
-| `res://assets/characters/sheets/summoned_soul_sheet.png` | 奴道/魂影召唤物精灵图。半透明魂影、无实体脚步，适合漂浮移动。包含 idle、move、attack、hit、dismiss。 | 256x256 单帧；8方向；每方向 8 列；推荐 2048x10240 PNG 透明底 | 奴道杀招、战斗召唤物 |
+| `res://assets/characters/sheets/player_male_sheet.png` | 男主战斗精灵图：黑金破损法袍、剑道/散修气质，腰间或背后有小型剑形蛊器，青绿法力点缀，轮廓干净。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | male dark cultivation swordsman, black torn robe, old-gold trim, subtle cyan-green occult accents, 2.5D top-down pixel-art sprite |
+| `res://assets/characters/sheets/player_female_sheet.png` | 女主战斗精灵图：与男主同体型比例和锚点，长发、发饰、长袖/轻甲差异，黑金法袍和青绿法力点缀。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | female dark cultivation swordswoman, black torn robe, old-gold trim, hair ornament, same pixel scale as male player |
+| `res://assets/characters/sheets/enemy_cultivator_sheet.png` | 通用敌方蛊师/蛊仙：暗紫黑法袍、敌意法力光、肩部更尖，轮廓要和玩家明显区分。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | hostile dark cultivator, black-purple ragged robe, gaunt silhouette, cracked old-gold trim, compact purple aura |
+| `res://assets/characters/sheets/enemy_elite_sheet.png` | 精英敌人：更高阶、更宽的轮廓，黑金法袍甲、披风、魂影碎片或小型法阵残片。 | 320x320 单帧；4方向 x 4帧；总 1280x1280 PNG 透明底 | elite dark cultivator, imposing silhouette, tattered cape, close smoky soul fragments, larger 320px frame |
+| `res://assets/characters/sheets/npc_cultivator_sheet.png` | 中立/盟友 NPC：灰黑/灰金法袍，青色或玉色点缀，气质比敌人克制，不要带强敌意光效。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | neutral allied cultivator, gray-black robe, muted old-gold and cyan-green trim, calm silhouette |
+| `res://assets/characters/sheets/summoned_soul_sheet.png` | 奴道/魂影召唤物：半透明魂影、黑青灵雾、无实体脚步，漂浮移动，底部锚点稳定。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | summoned soul shade, ghostly humanoid silhouette, cyan spirit mist, floating robe-tail base |
 
-如果图片生成工具无法稳定输出超大 sheet，可以改用拆分文件，命名规则如下：
+### 战斗特效 compact strip
 
-```text
-res://assets/characters/sheets/player_male/idle_down.png
-res://assets/characters/sheets/player_male/idle_down_right.png
-res://assets/characters/sheets/player_male/walk_down.png
-res://assets/characters/sheets/player_male/cast_down.png
-...
-```
+杀招和角色动作同步使用小型 1x4 strip。每个特效只做一个清晰循环或一次性爆发过程，代码会按实际帧数循环，不需要补空帧到 8/10 帧。
 
-拆分文件规范：每个 PNG 为横向 strip，单帧 `256x256`，例如 `walk_down.png` 是 `2048x256`，包含 8 帧；`hit_down.png` 可以是 `1024x256`，包含 4 帧。拆分方案更容易人工检查，也更方便后续 Godot 导入 `SpriteFrames`。
-
-### 战斗特效帧图
-
-杀招和角色动作最好同步补一些帧图，否则角色动起来后特效仍会显得静态。
-
-| 目标路径 | 素材要求 | 帧规格与排布 | 参考来源 |
+| 目标路径 | 精灵图描述 | 帧规格与排布 | 生成提示词要点 |
 |---|---|---:|---|
-| `res://assets/effects/sheets/sword_qi_projectile_sheet.png` | 剑气飞行弹道循环帧。青白剑气，尾部流光，方向默认朝右，代码可旋转。 | 512x128 单帧；8 帧横向 strip，总 4096x128 PNG 透明底 | `战斗.png`、杀招配置预览 |
-| `res://assets/effects/sheets/cast_charge_sheet.png` | 施法蓄力光效。脚下小型法阵、手部法力聚集，适合叠在角色身上。 | 256x256 单帧；8 帧横向 strip，总 2048x256 PNG 透明底 | `杀招配置.png`、战斗施法 |
-| `res://assets/effects/sheets/hit_spark_sheet.png` | 命中爆点。短促青白/金色冲击光，用于敌人受击。 | 256x256 单帧；6 帧横向 strip，总 1536x256 PNG 透明底 | `战斗.png` |
-| `res://assets/effects/sheets/backlash_burst_sheet.png` | 反噬爆发帧图。暗红裂纹、黑气回卷，用于失败/异常风险触发。 | 512x512 单帧；10 帧横向 strip，总 5120x512 PNG 透明底 | `仙蛊炼制.png`、`战斗.png` |
+| `res://assets/effects/sheets/sword_qi_projectile_sheet.png` | 剑气飞行弹道：青白剑气，旧金火花，方向默认朝右，代码可旋转。 | 256x256 单帧；4 帧横向 strip；总 1024x256 PNG 透明底 | cyan-white sword qi projectile facing right, 4-frame motion, same centerline |
+| `res://assets/effects/sheets/cast_charge_sheet.png` | 施法蓄力：脚下小型法阵、手部法力聚集、青绿光柱和旧金符尘。 | 256x256 单帧；4 帧横向 strip；总 1024x256 PNG 透明底 | cyan-green spell charge, circular magic array, gathering motes, compact release flash |
+| `res://assets/effects/sheets/hit_spark_sheet.png` | 命中爆点：短促青白/金色冲击光，用于敌人受击。 | 256x256 单帧；4 帧横向 strip；总 1024x256 PNG 透明底 | compact impact burst, cyan-white and old-gold spark slash, centered in each cell |
+| `res://assets/effects/sheets/backlash_burst_sheet.png` | 反噬爆发：暗红裂纹、黑气回卷、失败/异常风险触发。 | 512x512 单帧；4 帧横向 strip；总 2048x512 PNG 透明底 | dark red backlash explosion, black smoke curling inward, cracked talisman energy |
 
 ## P5：需要重生成/校准的 UI 素材
 

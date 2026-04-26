@@ -14,6 +14,8 @@ const ApertureService := preload("res://scripts/aperture_service.gd")
 const TribulationService := preload("res://scripts/tribulation_service.gd")
 const CultivationService := preload("res://scripts/cultivation_service.gd")
 const AscensionDefs := preload("res://scripts/data/ascension_defs.gd")
+const LongevityService := preload("res://scripts/longevity_service.gd")
+const LongevityDefs := preload("res://scripts/data/longevity_defs.gd")
 
 const COLOR_BG := Color(0.025, 0.03, 0.028, 1.0)
 const COLOR_PANEL := Color(0.035, 0.040, 0.038, 0.46)
@@ -25,6 +27,8 @@ const COLOR_GREEN := Color(0.42, 0.85, 0.48, 1.0)
 
 const RESOURCE_ICON_PATHS := {
 	"lifespan": "res://assets/ui/icons/lifespan_hourglass.png",
+	"longevity_gu": "res://assets/ui/icons/longevity_gu.png",
+	"death_warning": "res://assets/ui/icons/death_warning.png",
 	"immortal_stone": "res://assets/ui/icons/immortal_stone.png",
 	"spirit_qi": "res://assets/ui/icons/spirit_qi.png",
 	"intel": "res://assets/ui/icons/intel_scroll.png",
@@ -43,7 +47,11 @@ const GU_ICON_PATHS := {
 	"stealth_plugin": "res://assets/ui/gu/stealth_plugin.png",
 	"guard_plugin": "res://assets/ui/gu/guard_plugin.png",
 	"taixu_immortal": "res://assets/ui/gu/taixu_immortal.png",
-	"blood_sword": "res://assets/ui/gu/blood_sword.png"
+	"blood_sword": "res://assets/ui/gu/blood_sword.png",
+	"liquor_worm": "res://assets/ui/gu/liquor_worm.png",
+	"substitute_life_gu": "res://assets/ui/gu/substitute_life_gu.png",
+	"time_anchor_gu": "res://assets/ui/gu/time_anchor_gu.png",
+	"spring_autumn_cicada": "res://assets/ui/gu/spring_autumn_cicada.png"
 }
 
 const SCREEN_BACKGROUND_PATHS := {
@@ -51,10 +59,16 @@ const SCREEN_BACKGROUND_PATHS := {
 	"refining": "res://assets/backgrounds/refining_chamber.png",
 	"cultivation": "res://assets/backgrounds/cultivation_retreat.png",
 	"ascension": "res://assets/backgrounds/ascension_trial.png",
+	"longevity": "res://assets/backgrounds/longevity_search.png",
+	"death": "res://assets/backgrounds/death_realm.png",
+	"lifespan_auction": "res://assets/backgrounds/lifespan_auction.png",
+	"lifespan_hunt": "res://assets/backgrounds/lifespan_hunt.png",
 	"killer": "res://assets/backgrounds/refining_chamber.png",
 	"market": "res://assets/backgrounds/market_baohuangtian.png",
 	"npc": "res://assets/backgrounds/market_baohuangtian.png",
 	"story": "res://assets/backgrounds/story_three_kings_mountain.png",
+	"gu_yue_village": "res://assets/backgrounds/story/gu_yue_village.png",
+	"qingmao_crisis": "res://assets/backgrounds/story/qingmao_crisis.png",
 	"dungeon": "res://assets/backgrounds/story_three_kings_mountain.png",
 	"dog_king": "res://assets/backgrounds/dungeons/dog_king_trial.png",
 	"xin_king": "res://assets/backgrounds/dungeons/xin_king_trial.png",
@@ -208,6 +222,7 @@ const CHARACTER_SHEET_PATHS := {
 	"player_female": "res://assets/characters/sheets/player_female_sheet.png",
 	"enemy": "res://assets/characters/sheets/enemy_cultivator_sheet.png",
 	"enemy_elite": "res://assets/characters/sheets/enemy_elite_sheet.png",
+	"lifespan_hunter": "res://assets/characters/enemies/lifespan_hunter_sheet.png",
 	"npc": "res://assets/characters/sheets/npc_cultivator_sheet.png",
 	"summoned_soul": "res://assets/characters/sheets/summoned_soul_sheet.png",
 	"dog_king_boss": "res://assets/characters/boss/dog_king_will_sheet.png",
@@ -231,7 +246,9 @@ const EFFECT_SHEET_PATHS := {
 	"qi_collapse_wave": "res://assets/effects/sheets/qi_collapse_wave_sheet.png",
 	"breakthrough_pulse": "res://assets/effects/sheets/breakthrough_pulse_sheet.png",
 	"ascension_qi_surge": "res://assets/effects/sheets/ascension_qi_surge_sheet.png",
-	"inner_demon": "res://assets/effects/sheets/inner_demon_sheet.png"
+	"inner_demon": "res://assets/effects/sheets/inner_demon_sheet.png",
+	"longevity_gu_use": "res://assets/effects/sheets/longevity_gu_use_sheet.png",
+	"death_fade": "res://assets/effects/sheets/death_fade_sheet.png"
 }
 
 const STORY_UI_PATHS := {
@@ -274,8 +291,20 @@ const CULTIVATION_UI_PATHS := {
 	"ascension_phase_card": "res://assets/ui/cultivation/ascension_phase_card_9slice.png"
 }
 
+const LONGEVITY_UI_PATHS := {
+	"crisis_panel": "res://assets/ui/longevity/lifespan_crisis_panel_9slice.png",
+	"lead_card": "res://assets/ui/longevity/lead_card_9slice.png",
+	"auction_card": "res://assets/ui/longevity/auction_card_9slice.png",
+	"death_choice": "res://assets/ui/longevity/death_choice_card_9slice.png",
+	"badge_rumor": "res://assets/ui/longevity/lead_status_badge_rumor.png",
+	"badge_verified": "res://assets/ui/longevity/lead_status_badge_verified.png",
+	"badge_fake": "res://assets/ui/longevity/lead_status_badge_fake.png"
+}
+
 const SPRITE_FRAME_SIZE := Vector2i(256, 256)
 const SPRITE_FOOT_ANCHOR := Vector2(128, 198)
+const SPRITE_COMPACT_COLUMNS := 4
+const SPRITE_COMPACT_ROWS := 4
 const SPRITE_ACTION_ROW_OFFSET := {
 	"idle": 0,
 	"walk": 8,
@@ -304,8 +333,11 @@ var selected_core := "sword_core"
 var selected_plugins := []
 var selected_npc_id := "xuanwuzi"
 var selected_market_post_id := ""
+var selected_story_chapter_id := "gu_yue_village"
+var selected_story_choice_id := ""
 var selected_story_branch := "dog_king"
 var selected_difficulty := "normal"
+var selected_longevity_lead_id := ""
 
 var battle_rect := Rect2(Vector2(350, 150), Vector2(1220, 690))
 var combat_active := false
@@ -339,7 +371,10 @@ func _ready() -> void:
 	ApertureService.ensure_ecology_state(state)
 	TribulationService.ensure_tribulation_state(state)
 	CultivationService.ensure_cultivation_state(state)
-	if state.created:
+	LongevityService.ensure_longevity_state(state)
+	if state.created and LongevityService.is_death_locked(state):
+		_show_longevity()
+	elif state.created:
 		_show_aperture()
 	else:
 		_show_create()
@@ -360,9 +395,10 @@ func _ensure_input_actions() -> void:
 	_add_key_action("move_right", KEY_D)
 	_add_key_action("cast_1", KEY_1)
 	_add_key_action("cast_1", KEY_SPACE)
-	_add_key_action("inject_q", KEY_Q)
-	_add_key_action("inject_e", KEY_E)
-	_add_key_action("inject_r", KEY_R)
+	_add_key_action("cast_2", KEY_2)
+	_add_key_action("cast_3", KEY_3)
+	_add_key_action("cast_4", KEY_4)
+	_add_key_action("cast_5", KEY_5)
 
 func _add_key_action(action: String, keycode: Key) -> void:
 	if not InputMap.has_action(action):
@@ -490,15 +526,17 @@ func _build_header(parent: Control, title: String) -> void:
 	var life_icon := _texture_rect(String(RESOURCE_ICON_PATHS["lifespan"]), TextureRect.STRETCH_KEEP_ASPECT_CENTERED)
 	_place_control(life_canvas, life_icon, Vector2(0.12, 0.52), Vector2(48, 48))
 	var life := Label.new()
-	life.text = "寿元  %s    境界  %s" % [state.format_lifespan(), state.get_realm_name()]
+	var lifespan_status: String = LongevityService.status_label(state)
+	life.text = "寿元  %s  [%s]    境界  %s" % [state.format_lifespan(), lifespan_status, state.get_realm_name()]
 	life.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	life.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	life.add_theme_font_size_override("font_size", 22)
-	life.add_theme_color_override("font_color", COLOR_GOLD)
+	life.add_theme_color_override("font_color", _lifespan_status_color(String(state.lifespan_status)))
 	_apply_font(life)
 	_place_control(life_canvas, life, Vector2(0.58, 0.36), Vector2(360, 34))
 	var max_lifespan := 73 * 360 + 147
 	var current_lifespan := int(state.character.get("lifespan_days", 0))
+	max_lifespan = max(max_lifespan, current_lifespan)
 	var life_bar := _texture_progress_bar(float(current_lifespan), float(max_lifespan), String(PROGRESS_UI_PATHS["fill_cyan"]), String(PROGRESS_UI_PATHS["track"]), Vector2(362, 12), 16)
 	_place_control(life_canvas, life_bar, Vector2(0.58, 0.67), Vector2(362, 12))
 	var life_ratio: float = clampf(float(current_lifespan) / max(1.0, float(max_lifespan)), 0.0, 1.0)
@@ -556,13 +594,19 @@ func _build_nav(parent: VBoxContainer, active: String) -> void:
 	nav.add_theme_constant_override("separation", 8)
 	parent.add_child(nav)
 	nav.add_child(_nav_button("仙窍", Callable(self, "_show_aperture"), active == "aperture"))
+	nav.add_child(_nav_button("寿元", Callable(self, "_show_longevity"), active == "longevity" or active == "death"))
 	nav.add_child(_nav_button("修行", Callable(self, "_show_cultivation"), active == "cultivation"))
 	nav.add_child(_nav_button("炼蛊", Callable(self, "_show_refining"), active == "refining"))
 	nav.add_child(_nav_button("杀招", Callable(self, "_show_killer_move"), active == "killer"))
-	nav.add_child(_nav_button("宝黄天", Callable(self, "_show_market"), active == "market"))
-	nav.add_child(_nav_button("NPC", Callable(self, "_show_npc"), active == "npc"))
+	var market_button := _nav_button("宝黄天", Callable(self, "_show_market"), active == "market")
+	market_button.disabled = not _can_use_market()
+	market_button.tooltip_text = "六转蛊仙后才能稳定沟通宝黄天。" if market_button.disabled else ""
+	nav.add_child(market_button)
+	var people_button := _nav_button("人物", Callable(self, "_show_npc"), active == "npc")
+	people_button.disabled = _known_people_count() == 0
+	people_button.tooltip_text = "需要先在剧情中遇到人物。" if people_button.disabled else ""
+	nav.add_child(people_button)
 	nav.add_child(_nav_button("剧情", Callable(self, "_show_story"), active == "story" or active == "dungeon"))
-	nav.add_child(_nav_button("战斗", Callable(self, "_start_combat"), active == "combat"))
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nav.add_child(spacer)
@@ -572,6 +616,272 @@ func _build_nav(parent: VBoxContainer, active: String) -> void:
 
 func _noop() -> void:
 	pass
+
+func _current_rank() -> int:
+	return clampi(int(state.character.get("rank", state.character.get("realm_index", 1))), 1, 9)
+
+func _can_use_market() -> bool:
+	return state.created and _current_rank() >= 6
+
+func _known_people() -> Array:
+	var people: Array = []
+	if state.has_method("ensure_world_defaults"):
+		state.ensure_world_defaults()
+	for raw_npc in state.npcs:
+		var npc_state: Dictionary = raw_npc
+		if bool(npc_state.get("alive", true)) and bool(npc_state.get("met", false)):
+			people.append(npc_state)
+	return people
+
+func _known_people_count() -> int:
+	return _known_people().size()
+
+func _show_locked_feature(title: String, message: String, screen_id: String, background_path: String = "") -> void:
+	var bg := background_path if background_path != "" else String(SCREEN_BACKGROUND_PATHS.get("story", ""))
+	var shell := _build_shell(title, bg, screen_id)
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 12)
+	shell.add_child(body)
+	var panel := _add_panel(body, title, Vector2(0, 0))
+	panel.add_child(_warning_line(message))
+	panel.add_child(_dialogue_line("开放条件", "功能会随剧情遭遇和境界逐步解锁，不再作为开局常驻菜单。"))
+	panel.add_child(_section_label("最近事件"))
+	panel.add_child(_log_view(state.logs, 8))
+
+func _redirect_if_death_locked(target_screen: String) -> bool:
+	if target_screen == "longevity" or target_screen == "death" or not state.created:
+		return false
+	LongevityService.ensure_longevity_state(state)
+	if not LongevityService.is_death_locked(state):
+		return false
+	if current_screen != "longevity" and current_screen != "death":
+		state.add_log("寿元已尽，普通行动锁定。")
+	_show_longevity()
+	return true
+
+func _show_longevity() -> void:
+	LongevityService.ensure_longevity_state(state)
+	LongevityService.update_lifespan_status(state, false)
+	_sync_selected_longevity_lead()
+	var dead_locked: bool = LongevityService.is_death_locked(state)
+	var shell: VBoxContainer = _build_shell("寿元 / 永生", "res://assets/reference/market.png", "death" if dead_locked else "longevity")
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 12)
+	shell.add_child(body)
+
+	var left := _add_panel(body, "寿元危机", Vector2(500, 0))
+	left.add_child(_longevity_crisis_card())
+	left.add_child(_text_line("寿蛊库存", LongevityService.gu_inventory_text(state)))
+	for tier_id in LongevityDefs.gu_tier_ids():
+		var tier: Dictionary = LongevityDefs.gu_tier(tier_id)
+		left.add_child(_text_line(String(tier.get("name", tier_id)), "x%d / +%d天" % [int(state.longevity_gu_inventory.get(tier_id, 0)), int(tier.get("days", 0))]))
+	var combat_death := LongevityService.is_combat_death(state)
+	if not combat_death:
+		left.add_child(_button("使用最强寿蛊续命", Callable(self, "_longevity_use_best_gu"), dead_locked))
+	if dead_locked:
+		left.add_child(_button("结束旧局 / 新建角色", Callable(self, "_longevity_reincarnate"), true))
+		if combat_death:
+			left.add_child(_warning_line("战斗死亡已成定局。只有春秋蝉或替死手段能在死亡瞬间改写结局。"))
+		else:
+			left.add_child(_warning_line("寿元已归零。除续命与结束旧局外，普通行动已锁定。"))
+	else:
+		left.add_child(_button("搜寻线索（推进1月）", Callable(self, "_longevity_search")))
+		left.add_child(_button("参与寿蛊竞拍", Callable(self, "_longevity_bid_auction")))
+		left.add_child(_warning_line("寿元越低，人物抬价、截胡和夺寿追杀概率越高。"))
+
+	var center := _add_panel(body, "寿蛊线索追踪", Vector2(840, 0))
+	var leads: Array = LongevityService.active_leads(state)
+	if leads.is_empty():
+		center.add_child(_warning_line("暂无有效寿蛊线索，可主动搜寻或从宝黄天购买。"))
+	for raw_lead in leads:
+		var lead: Dictionary = raw_lead
+		var lead_id: String = String(lead.get("id", ""))
+		center.add_child(_longevity_lead_button(lead, lead_id == selected_longevity_lead_id, Callable(self, "_longevity_select_lead").bind(lead_id)))
+
+	var right := _add_panel(body, "竞拍 / 追杀 / 死亡记录", Vector2(610, 0))
+	var selected_lead: Dictionary = _selected_longevity_lead()
+	if selected_lead.is_empty():
+		right.add_child(_warning_line("请选择一条寿蛊线索。"))
+	else:
+		right.add_child(_image_or_placeholder(String(RESOURCE_ICON_PATHS["longevity_gu"]), "寿蛊线索", Color(0.04, 0.08, 0.07, 0.65), Vector2(0, 150)))
+		right.add_child(_text_line("线索", String(selected_lead.get("title", "未知"))))
+		right.add_child(_text_line("状态", LongevityDefs.lead_status_label(String(selected_lead.get("status", "rumor")))))
+		right.add_child(_text_line("区域", _region_name(String(selected_lead.get("region", "")))))
+		right.add_child(_metric("可信度", int(selected_lead.get("truthfulness", 0)), _trust_color(int(selected_lead.get("truthfulness", 0)))))
+		right.add_child(_metric("争夺风险", int(selected_lead.get("risk", 0)), _risk_color(int(selected_lead.get("risk", 0)))))
+		right.add_child(_dialogue_line("线索", String(selected_lead.get("body", ""))))
+		right.add_child(_button("调查线索（120情报）", Callable(self, "_longevity_investigate_selected")))
+		right.add_child(_button("追踪线索（推进1月）", Callable(self, "_longevity_pursue_selected"), String(selected_lead.get("status", "")) == "verified"))
+	right.add_child(_section_label("夺寿事件"))
+	var event_count := 0
+	for raw_event in state.world_events:
+		var event: Dictionary = raw_event
+		if String(event.get("kind", "")) == "夺寿追杀":
+			right.add_child(_text_line("追杀", "%s / 威胁%d / %d月止" % [_region_name(String(event.get("region", ""))), int(event.get("severity", 0)), int(event.get("expires_month", 0))]))
+			event_count += 1
+			if event_count >= 3:
+				break
+	if event_count == 0:
+		right.add_child(_text_line("追杀", "暂无明确夺寿窗口"))
+	else:
+		right.add_child(_button("迎击夺寿追杀", Callable(self, "_start_lifespan_hunt_combat"), true))
+	right.add_child(_section_label("死亡记录"))
+	if state.reincarnation_history.is_empty():
+		right.add_child(_text_line("记录", "尚未转世"))
+	else:
+		for i in range(min(3, state.reincarnation_history.size())):
+			var record: Dictionary = state.reincarnation_history[i]
+			right.add_child(_text_line(String(record.get("name", "旧身")), "第%d月 / %s" % [int(record.get("world_month", 0)), String(record.get("reason", ""))]))
+	right.add_child(_section_label("最近事件"))
+	right.add_child(_log_view(state.logs, 6))
+	SaveService.save_game(state)
+
+func _longevity_crisis_card() -> PanelContainer:
+	var panel := _panel_container(Vector2(0, 190), String(LONGEVITY_UI_PATHS["crisis_panel"]), 10)
+	var box := _panel_body(panel)
+	var status: String = String(state.lifespan_status)
+	var status_color: Color = _lifespan_status_color(status)
+	box.add_child(_text_line("当前状态", LongevityDefs.status_label(status)))
+	box.add_child(_text_line("剩余寿元", state.format_lifespan()))
+	var days: int = int(state.character.get("lifespan_days", 0))
+	var crisis_max: int = max(720, days)
+	var bar := _texture_progress_bar(float(days), float(crisis_max), _progress_fill_path(status_color), String(PROGRESS_UI_PATHS["track"]), Vector2(0, 16), 16)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(bar)
+	var warning: String = LongevityService.current_warning(state)
+	if warning != "":
+		box.add_child(_warning_line(warning))
+	else:
+		box.add_child(_dialogue_line("命灯", "寿元尚稳，但沙漏从不倒流。"))
+	return panel
+
+func _longevity_lead_button(lead: Dictionary, selected: bool, callback: Callable) -> Button:
+	var status: String = String(lead.get("status", "rumor"))
+	var text := "%s\n%s｜可信 %d%%｜风险 %d%%｜%d月止" % [
+		String(lead.get("title", "寿蛊线索")),
+		LongevityDefs.lead_status_label(status),
+		int(lead.get("truthfulness", 0)),
+		int(lead.get("risk", 0)),
+		int(lead.get("expires_month", 0))
+	]
+	var button := _button(("◆ " if selected else "◇ ") + text, callback, selected)
+	button.custom_minimum_size = Vector2(120, 92)
+	_apply_button_skin(button, String(UI_SKIN_PATHS["button_active"]) if selected else String(LONGEVITY_UI_PATHS["lead_card"]), String(UI_SKIN_PATHS["button_hover"]), String(UI_SKIN_PATHS["button_active"]), 40)
+	button.icon = _get_texture(String(RESOURCE_ICON_PATHS["longevity_gu"]))
+	button.expand_icon = true
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_constant_override("icon_max_width", 44)
+	return button
+
+func _sync_selected_longevity_lead() -> void:
+	if LongevityService.find_lead_index(state, selected_longevity_lead_id) >= 0:
+		return
+	var leads: Array = LongevityService.active_leads(state)
+	if leads.is_empty():
+		selected_longevity_lead_id = ""
+		return
+	var first_lead: Dictionary = leads[0]
+	selected_longevity_lead_id = String(first_lead.get("id", ""))
+
+func _selected_longevity_lead() -> Dictionary:
+	var index: int = LongevityService.find_lead_index(state, selected_longevity_lead_id)
+	if index < 0:
+		return {}
+	var lead: Dictionary = state.longevity_leads[index]
+	return lead
+
+func _longevity_select_lead(lead_id: String) -> void:
+	selected_longevity_lead_id = lead_id
+	_show_longevity()
+
+func _longevity_search() -> void:
+	var message: String = LongevityService.search_lead(state)
+	state.add_log(message)
+	if message.find("失败") < 0:
+		WorldClock.advance_months(state, 1, "搜寻寿蛊线索")
+	SaveService.save_game(state)
+	_show_longevity()
+
+func _longevity_investigate_selected() -> void:
+	var message: String = LongevityService.investigate_lead(state, selected_longevity_lead_id)
+	state.add_log(message)
+	SaveService.save_game(state)
+	_show_longevity()
+
+func _longevity_pursue_selected() -> void:
+	var message: String = LongevityService.pursue_lead(state, selected_longevity_lead_id)
+	state.add_log(message)
+	if message.find("不存在") < 0 and message.find("不足") < 0:
+		WorldClock.advance_months(state, 1, "追踪寿蛊线索")
+	SaveService.save_game(state)
+	_show_longevity()
+
+func _longevity_bid_auction() -> void:
+	var message: String = LongevityService.bid_auction(state)
+	state.add_log(message)
+	if message.find("仙元石不足") < 0:
+		WorldClock.advance_months(state, 1, "寿蛊竞拍")
+	SaveService.save_game(state)
+	_show_longevity()
+
+func _longevity_use_best_gu() -> void:
+	var message: String = LongevityService.use_best_gu(state)
+	state.add_log(message)
+	SaveService.save_game(state)
+	_show_longevity()
+
+func _longevity_reincarnate() -> void:
+	LongevityService.reincarnate(state)
+	SaveService.save_game(state)
+	selected_longevity_lead_id = ""
+	selected_market_post_id = ""
+	selected_npc_id = "xuanwuzi"
+	create_name = "顾无生"
+	_show_create()
+
+func _start_lifespan_hunt_combat() -> void:
+	var encounter: Dictionary = {
+		"id": "lifespan_hunt",
+		"name": "夺寿追杀",
+		"objective": "击败所有追杀者，保住寿蛊线索",
+		"background": String(SCREEN_BACKGROUND_PATHS["lifespan_hunt"]),
+		"branch_id": "wild",
+		"difficulty_id": "danger",
+		"effect": "death_fade",
+		"rewards": {"immortal_stone": 360, "intel": 220, "materials": 1},
+		"failure": {"lifespan_loss": 420, "months": 2},
+		"morality_delta": -2,
+		"risk": 72,
+		"enemies": [
+			{"name": "夺寿散修", "sheet": "lifespan_hunter", "hp": 680, "max_hp": 680, "speed": 132, "damage_min": 12, "damage_max": 22, "pos_ratio": Vector2(0.74, 0.32)},
+			{"name": "黑市追迹者", "sheet": "enemy_elite", "hp": 760, "max_hp": 760, "speed": 104, "damage_min": 14, "damage_max": 24, "pos_ratio": Vector2(0.82, 0.56)},
+			{"name": "索命魂影", "sheet": "summoned_soul", "hp": 480, "max_hp": 480, "speed": 176, "damage_min": 9, "damage_max": 18, "pos_ratio": Vector2(0.66, 0.74)}
+		]
+	}
+	state.add_log("你主动迎击夺寿追杀。")
+	_start_combat(encounter)
+
+func _start_person_ambush_combat() -> void:
+	var encounter: Dictionary = DungeonDefs.build_wild_encounter()
+	encounter["id"] = "person_ambush"
+	encounter["name"] = "人物袭击事件"
+	encounter["objective"] = "击退敌对人物布下的袭击"
+	encounter["branch_id"] = "person_event"
+	encounter["difficulty_id"] = "danger"
+	encounter["risk"] = 64
+	encounter["background"] = String(SCREEN_BACKGROUND_PATHS["lifespan_hunt"])
+	encounter["rewards"] = {"immortal_stone": 320, "intel": 180, "materials": 2}
+	for i in range(state.world_events.size()):
+		var event: Dictionary = state.world_events[i]
+		var kind := String(event.get("kind", ""))
+		if kind in ["战后袭击窗口", "反噬伏击", "仇敌标记"] and not bool(event.get("resolved", false)):
+			event["resolved"] = true
+			state.world_events[i] = event
+			break
+	state.add_log("你主动处理人物袭击窗口。")
+	_start_combat(encounter)
 
 func _show_create() -> void:
 	state.created = false
@@ -655,7 +965,7 @@ func _enter_world() -> void:
 	selected_plugins = SchoolLoadouts.default_plugins_for_school(create_school)
 	var default_move: Dictionary = SchoolLoadouts.default_move_for_school(state, create_school)
 	state.add_killer_move(default_move)
-	StoryService.ensure_story_state(state)
+	StoryService.configure_initial_story(state)
 	ApertureService.ensure_ecology_state(state)
 	TribulationService.ensure_tribulation_state(state)
 	CultivationService.ensure_cultivation_state(state)
@@ -663,6 +973,8 @@ func _enter_world() -> void:
 	_show_aperture()
 
 func _show_aperture() -> void:
+	if _redirect_if_death_locked("aperture"):
+		return
 	ApertureService.ensure_ecology_state(state)
 	TribulationService.ensure_tribulation_state(state)
 	var shell := _build_shell("仙窍总览", "res://assets/reference/aperture.png", "aperture")
@@ -672,49 +984,52 @@ func _show_aperture() -> void:
 	shell.add_child(body)
 
 	var left := _add_panel(body, "仙窍监控", Vector2(520, 0))
+	var left_content := _scroll_box(left)
 	var tribulation_summary: Dictionary = TribulationService.state_summary(state)
-	left.add_child(_aperture_metric("天地二气平衡度", int(state.aperture.get("qi_balance", 0)), COLOR_CYAN))
-	left.add_child(_aperture_metric("道痕互斥率", int(state.aperture.get("conflict_rate", 0)), COLOR_GOLD))
-	left.add_child(_aperture_metric("蛊虫饱食度", int(state.aperture.get("food_saturation", 0)), COLOR_RED if int(state.aperture.get("food_saturation", 0)) < 50 else COLOR_GREEN))
-	left.add_child(_aperture_metric("生态稳定性", int(state.aperture.get("stability", 0)), COLOR_GREEN))
-	left.add_child(_aperture_metric("灾劫压力", int(tribulation_summary.get("pressure", 0)), COLOR_RED if int(tribulation_summary.get("pressure", 0)) > 72 else COLOR_GOLD))
-	left.add_child(_text_line("仙元石净产出", "+%d/月" % int(state.aperture.get("stone_delta", 0))))
-	left.add_child(_text_line("世界刻", "第 %d 月" % int(state.world_month)))
-	left.add_child(_text_line("下次压测", "已锁定" if bool(tribulation_summary.get("active", false)) else "%d 月后" % int(tribulation_summary.get("months_left", 0))))
-	left.add_child(_button("闭关修行（推进3月）", Callable(self, "_cultivation_retreat")))
-	left.add_child(_button("冲击小阶", Callable(self, "_try_breakthrough")))
-	left.add_child(_button("准备升仙", Callable(self, "_prepare_ascension")))
-	left.add_child(_button("升仙试炼", Callable(self, "_resolve_ascension_phase")))
-	left.add_child(_button("调度资源（推进1月）", Callable(self, "_advance_one_month")))
-	left.add_child(_button("扩容节点", Callable(self, "_expand_node")))
-	left.add_child(_button("修复生态", Callable(self, "_repair_aperture")))
-	left.add_child(_button("补链最弱蛊虫", Callable(self, "_repair_worst_gu")))
-	left.add_child(_button("准备防御脚本", Callable(self, "_prepare_tribulation_defense")))
-	left.add_child(_button("提前渡劫压测", Callable(self, "_resolve_tribulation_now")))
+	left_content.add_child(_aperture_metric("天地二气平衡度", int(state.aperture.get("qi_balance", 0)), COLOR_CYAN))
+	left_content.add_child(_aperture_metric("道痕互斥率", int(state.aperture.get("conflict_rate", 0)), COLOR_GOLD))
+	left_content.add_child(_aperture_metric("蛊虫饱食度", int(state.aperture.get("food_saturation", 0)), COLOR_RED if int(state.aperture.get("food_saturation", 0)) < 50 else COLOR_GREEN))
+	left_content.add_child(_aperture_metric("生态稳定性", int(state.aperture.get("stability", 0)), COLOR_GREEN))
+	left_content.add_child(_aperture_metric("灾劫压力", int(tribulation_summary.get("pressure", 0)), COLOR_RED if int(tribulation_summary.get("pressure", 0)) > 72 else COLOR_GOLD))
+	left_content.add_child(_text_line("仙元石净产出", "+%d/月" % int(state.aperture.get("stone_delta", 0))))
+	left_content.add_child(_text_line("世界刻", "第 %d 月" % int(state.world_month)))
+	left_content.add_child(_text_line("下次压测", "已锁定" if bool(tribulation_summary.get("active", false)) else "%d 月后" % int(tribulation_summary.get("months_left", 0))))
+	left_content.add_child(_button("闭关修行（推进3月）", Callable(self, "_cultivation_retreat")))
+	left_content.add_child(_button("冲击小阶", Callable(self, "_try_breakthrough")))
+	left_content.add_child(_button("准备升仙", Callable(self, "_prepare_ascension")))
+	left_content.add_child(_button("升仙试炼", Callable(self, "_resolve_ascension_phase")))
+	left_content.add_child(_button("调度资源（推进1月）", Callable(self, "_advance_one_month")))
+	left_content.add_child(_button("扩容节点", Callable(self, "_expand_node")))
+	left_content.add_child(_button("修复生态", Callable(self, "_repair_aperture")))
+	left_content.add_child(_button("补链最弱蛊虫", Callable(self, "_repair_worst_gu")))
+	left_content.add_child(_button("准备防御脚本", Callable(self, "_prepare_tribulation_defense")))
+	left_content.add_child(_button("提前渡劫压测", Callable(self, "_resolve_tribulation_now")))
 
 	var center := _add_panel(body, "节点拓扑", Vector2(760, 0))
-	center.add_child(_aperture_node_map(state.aperture.get("nodes", [])))
-	center.add_child(_section_label("蛊虫生态链"))
-	center.add_child(_gu_ecology_list())
+	var center_content := _scroll_box(center)
+	center_content.add_child(_aperture_node_map(state.aperture.get("nodes", [])))
+	center_content.add_child(_section_label("蛊虫生态链"))
+	center_content.add_child(_gu_ecology_list())
 	var loop_hint := Label.new()
 	loop_hint.text = "玩法闭环：经营仙窍 → 炼蛊 → 编译杀招 → 战斗博弈 → 奖励回流。"
 	loop_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	loop_hint.add_theme_color_override("font_color", COLOR_GOLD)
-	center.add_child(loop_hint)
+	center_content.add_child(loop_hint)
 
 	var right := _add_panel(body, "告警中心 / 日志", Vector2(560, 0))
+	var right_content := _scroll_box(right)
 	var warnings: Array = state.get_warnings()
 	if warnings.is_empty():
-		right.add_child(_text_line("状态", "暂无严重告警"))
+		right_content.add_child(_text_line("状态", "暂无严重告警"))
 	else:
 		for warning in warnings:
-			right.add_child(_warning_line(warning))
-	right.add_child(_section_label("灾劫"))
-	right.add_child(_text_line("当前灾劫", String(tribulation_summary.get("name", "未锁定"))))
-	right.add_child(_text_line("目标节点", String(tribulation_summary.get("target", "未知"))))
-	right.add_child(_dialogue_line("压测说明", String(tribulation_summary.get("description", ""))))
-	right.add_child(_section_label("最近事件"))
-	right.add_child(_log_view(state.logs, 10))
+			right_content.add_child(_warning_line(warning))
+	right_content.add_child(_section_label("灾劫"))
+	right_content.add_child(_text_line("当前灾劫", String(tribulation_summary.get("name", "未锁定"))))
+	right_content.add_child(_text_line("目标节点", String(tribulation_summary.get("target", "未知"))))
+	right_content.add_child(_dialogue_line("压测说明", String(tribulation_summary.get("description", ""))))
+	right_content.add_child(_section_label("最近事件"))
+	right_content.add_child(_log_view(state.logs, 10))
 
 func _advance_one_month() -> void:
 	WorldClock.advance_months(state, 1, "调度资源")
@@ -751,6 +1066,8 @@ func _resolve_tribulation_now() -> void:
 	_show_aperture()
 
 func _show_cultivation() -> void:
+	if _redirect_if_death_locked("cultivation"):
+		return
 	CultivationService.ensure_cultivation_state(state)
 	var status: Dictionary = CultivationService.cultivation_status(state)
 	var shell := _build_shell("修行 / 升仙", "res://assets/reference/ascension.png", "cultivation")
@@ -902,44 +1219,181 @@ func _ascension_phase_status(status_text: String) -> String:
 	return "待试炼"
 
 func _show_story() -> void:
+	if _redirect_if_death_locked("story"):
+		return
 	StoryService.ensure_story_state(state)
-	StoryService.mark_intro_seen(state)
-	var shell := _build_shell("三王山传承", "res://assets/reference/killer_move.png", "story")
+	_sync_selected_story_chapter()
+	_sync_selected_story_choice()
+	var chapter: Dictionary = StoryService.chapter(selected_story_chapter_id)
+	var chapter_progress: Dictionary = StoryService.chapter_progress(state, selected_story_chapter_id)
+	var chapter_bg := String(chapter.get("background", SCREEN_BACKGROUND_PATHS["story"]))
+	var shell := _build_shell("剧情 / 副本", chapter_bg, "story")
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 12)
 	shell.add_child(body)
 
-	var left := _add_panel(body, "剧情线索", Vector2(520, 0))
-	left.add_child(_image_or_placeholder(String(SCREEN_BACKGROUND_PATHS["story"]), "三王山远景", Color(0.08, 0.07, 0.055, 0.55), Vector2(0, 190)))
-	left.add_child(_dialogue_line("南疆传闻", "三叉山旧地忽现三道传承光柱，犬王、信王、爆王残念各守一线。"))
-	left.add_child(_dialogue_line("你的判断", "此地不只争传承，也争情报、声名与退路。选择会在暗处改变他人对你的评判。"))
-	left.add_child(_section_label("难度"))
-	for difficulty_id in DungeonDefs.difficulty_ids():
-		left.add_child(_difficulty_button(String(difficulty_id)))
+	var left := _add_panel(body, "剧情线", Vector2(520, 0))
+	var left_content := _scroll_box(left)
+	left_content.add_child(_image_or_placeholder(chapter_bg, String(chapter.get("name", "剧情")), Color(0.08, 0.07, 0.055, 0.55), Vector2(0, 170)))
+	left_content.add_child(_dialogue_line(String(chapter.get("act", "篇章")), String(chapter.get("summary", ""))))
+	left_content.add_child(_section_label("已知线索"))
+	var visible_chapters := StoryService.visible_chapter_ids(state)
+	if visible_chapters.is_empty():
+		left_content.add_child(_warning_line("暂无剧情线索。"))
+	for chapter_id_value in visible_chapters:
+		var chapter_id := String(chapter_id_value)
+		var item: Dictionary = StoryService.chapter(chapter_id)
+		var progress: Dictionary = StoryService.chapter_progress(state, chapter_id)
+		var unlocked := bool(progress.get("unlocked", false))
+		var resolved := bool(progress.get("resolved", false))
+		var status := "线索"
+		if unlocked:
+			status = "已发生" if resolved else ("传承线索" if String(item.get("kind", "")) == "dungeon" else "可抉择")
+		var button := _choice_button("%s｜%s\n%s" % [String(item.get("act", "")), String(item.get("name", chapter_id)), status], selected_story_chapter_id == chapter_id, Callable(self, "_set_story_chapter").bind(chapter_id))
+		button.disabled = not unlocked and not resolved
+		left_content.add_child(button)
 
-	var center := _add_panel(body, "三王传承", Vector2(780, 0))
-	for branch_id in DungeonDefs.branch_ids():
-		center.add_child(_branch_choice_card(String(branch_id)))
-	var start_button := _button("进入传承", Callable(self, "_start_story_dungeon"), true)
-	start_button.custom_minimum_size = Vector2(0, 72)
-	center.add_child(start_button)
+	var center := _add_panel(body, String(chapter.get("name", "剧情节点")), Vector2(780, 0))
+	var center_content := _scroll_box(center)
+	var kind := String(chapter.get("kind", "choice"))
+	if kind == "dungeon":
+		_sync_selected_story_branch()
+		center_content.add_child(_dialogue_line("三叉山传闻", String(chapter.get("summary", ""))))
+		center_content.add_child(_section_label("传承线"))
+		for branch_id in DungeonDefs.branch_ids():
+			center_content.add_child(_branch_choice_card(String(branch_id)))
+		center_content.add_child(_section_label("难度"))
+		for difficulty_id in DungeonDefs.difficulty_ids():
+			center_content.add_child(_difficulty_button(String(difficulty_id)))
+		var start_button := _button("进入传承", Callable(self, "_start_story_dungeon"), true)
+		start_button.custom_minimum_size = Vector2(0, 72)
+		start_button.disabled = not StoryService.can_start_branch(state, selected_story_branch)
+		center_content.add_child(start_button)
+	elif kind == "planned":
+		center_content.add_child(_warning_line("尚未形成可执行线索。"))
+		center_content.add_child(_dialogue_line("传闻", "这段因果仍在暗处流转，需等更多人物、情报或修为支撑。"))
+	else:
+		center_content.add_child(_dialogue_line("局势", String(chapter.get("summary", ""))))
+		center_content.add_child(_section_label("抉择"))
+		for raw_choice in StoryService.choices(selected_story_chapter_id):
+			var choice_def: Dictionary = raw_choice
+			center_content.add_child(_story_choice_button(choice_def, bool(chapter_progress.get("resolved", false))))
+		var resolve_button := _button("定下抉择", Callable(self, "_resolve_story_choice"), true)
+		resolve_button.custom_minimum_size = Vector2(0, 70)
+		resolve_button.disabled = bool(chapter_progress.get("resolved", false)) or selected_story_choice_id == ""
+		center_content.add_child(resolve_button)
 
-	var right := _add_panel(body, "副本记录", Vector2(560, 0))
-	right.add_child(_text_line("章节进度", "%d / 3" % StoryService.chapter_completion(state)))
-	var selected_branch: Dictionary = DungeonDefs.branch(selected_story_branch)
-	right.add_child(_section_label(String(selected_branch.get("name", "传承"))))
-	right.add_child(_text_line("流派", String(selected_branch.get("school", "未知"))))
-	right.add_child(_text_line("试炼", String(selected_branch.get("subtitle", "未知"))))
-	right.add_child(_text_line("难度", DungeonDefs.difficulty_name(selected_difficulty)))
-	right.add_child(_dialogue_line("残念低语", String(selected_branch.get("intro", ""))))
-	var progress: Dictionary = state.dungeon_progress.get(selected_story_branch, {})
-	right.add_child(_text_line("尝试", "%d 次" % int(progress.get("attempts", 0))))
-	right.add_child(_text_line("胜利", "%d 次" % int(progress.get("victories", 0))))
-	right.add_child(_text_line("最高难度", _difficulty_display(String(progress.get("best_difficulty", "")))))
-	right.add_child(_section_label("最近事件"))
-	right.add_child(_log_view(state.logs, 8))
+	var right := _add_panel(body, "剧情结果", Vector2(560, 0))
+	var right_content := _scroll_box(right)
+	right_content.add_child(_text_line("篇章状态", "已发生" if bool(chapter_progress.get("resolved", false)) else ("可抉择" if bool(chapter_progress.get("unlocked", false)) else "未解锁")))
+	if kind == "dungeon":
+		right_content.add_child(_text_line("章节进度", "%d / 3" % StoryService.chapter_completion(state)))
+		var selected_branch: Dictionary = DungeonDefs.branch(selected_story_branch)
+		right_content.add_child(_section_label(String(selected_branch.get("name", "传承"))))
+		right_content.add_child(_text_line("流派", String(selected_branch.get("school", "未知"))))
+		right_content.add_child(_text_line("试炼", String(selected_branch.get("subtitle", "未知"))))
+		right_content.add_child(_text_line("难度", DungeonDefs.difficulty_name(selected_difficulty)))
+		right_content.add_child(_dialogue_line("残念低语", String(selected_branch.get("intro", ""))))
+		var progress: Dictionary = state.dungeon_progress.get(selected_story_branch, {})
+		right_content.add_child(_text_line("尝试", "%d 次" % int(progress.get("attempts", 0))))
+		right_content.add_child(_text_line("胜利", "%d 次" % int(progress.get("victories", 0))))
+		right_content.add_child(_text_line("最高难度", _difficulty_display(String(progress.get("best_difficulty", "")))))
+		if StoryService.branch_attempted(state, selected_story_branch):
+			right_content.add_child(_text_line("传承状态", "残念已散"))
+	elif kind == "choice":
+		var selected_choice: Dictionary = StoryService.choice(selected_story_chapter_id, selected_story_choice_id)
+		if selected_choice.is_empty():
+			right_content.add_child(_warning_line("请选择一个剧情抉择。"))
+		else:
+			right_content.add_child(_section_label(String(selected_choice.get("title", "抉择"))))
+			right_content.add_child(_dialogue_line("抉择说明", String(selected_choice.get("body", ""))))
+			right_content.add_child(_text_line("资源消耗", _choice_cost_text(selected_choice)))
+			right_content.add_child(_text_line("奖励/代价", _choice_reward_text(selected_choice)))
+			if typeof(selected_choice.get("encounter", null)) == TYPE_DICTIONARY:
+				right_content.add_child(_warning_line("此行会踏入杀局；若无保命手段，败亡即是终局。"))
+	right_content.add_child(_section_label("最近事件"))
+	right_content.add_child(_log_view(state.logs, 8))
 	SaveService.save_game(state)
+
+func _story_choice_button(choice_def: Dictionary, already_resolved: bool) -> Button:
+	var choice_id := String(choice_def.get("id", ""))
+	var text := "%s\n%s" % [String(choice_def.get("title", choice_id)), String(choice_def.get("body", ""))]
+	var button := _choice_button(text, selected_story_choice_id == choice_id, Callable(self, "_set_story_choice").bind(choice_id))
+	button.custom_minimum_size = Vector2(120, 96)
+	button.disabled = already_resolved
+	return button
+
+func _sync_selected_story_chapter() -> void:
+	var visible_chapters := StoryService.visible_chapter_ids(state)
+	if selected_story_chapter_id != "" and visible_chapters.has(selected_story_chapter_id):
+		return
+	if not visible_chapters.is_empty():
+		selected_story_chapter_id = String(visible_chapters[0])
+		return
+	selected_story_chapter_id = ""
+
+func _sync_selected_story_choice() -> void:
+	var choices := StoryService.choices(selected_story_chapter_id)
+	for raw_choice in choices:
+		var choice_def: Dictionary = raw_choice
+		if String(choice_def.get("id", "")) == selected_story_choice_id:
+			return
+	selected_story_choice_id = StoryService.first_choice_id(selected_story_chapter_id)
+
+func _sync_selected_story_branch() -> void:
+	if StoryService.can_start_branch(state, selected_story_branch):
+		return
+	for branch_id_value in DungeonDefs.branch_ids():
+		var branch_id := String(branch_id_value)
+		if StoryService.can_start_branch(state, branch_id):
+			selected_story_branch = branch_id
+			return
+
+func _set_story_chapter(chapter_id: String) -> void:
+	if not StoryService.visible_chapter_ids(state).has(chapter_id):
+		return
+	selected_story_chapter_id = chapter_id
+	selected_story_choice_id = ""
+	_show_story()
+
+func _set_story_choice(choice_id: String) -> void:
+	selected_story_choice_id = choice_id
+	_show_story()
+
+func _resolve_story_choice() -> void:
+	var result: Dictionary = StoryService.resolve_choice(state, selected_story_chapter_id, selected_story_choice_id)
+	state.add_log(String(result.get("message", "")))
+	SaveService.save_game(state)
+	var encounter: Dictionary = result.get("encounter", {})
+	if bool(result.get("ok", false)) and not encounter.is_empty():
+		_start_combat(encounter)
+		return
+	_show_story()
+
+func _choice_cost_text(choice_def: Dictionary) -> String:
+	var costs: Dictionary = choice_def.get("costs", {})
+	if costs.is_empty():
+		return "无"
+	var parts: Array = []
+	for cost_id in costs.keys():
+		parts.append("%s %d" % [_resource_name(String(cost_id)), int(costs[cost_id])])
+	return _join_strings(parts, " / ")
+
+func _choice_reward_text(choice_def: Dictionary) -> String:
+	var parts: Array = []
+	var rewards: Dictionary = choice_def.get("rewards", {})
+	for reward_id in rewards.keys():
+		parts.append("%s +%d" % [_resource_name(String(reward_id)), int(rewards[reward_id])])
+	for gu_id_value in choice_def.get("gu_rewards", []):
+		var gu_id := String(gu_id_value)
+		parts.append("%s +1" % state.get_gu_name(gu_id))
+	var cultivation_gain: int = int(choice_def.get("cultivation_exp", 0))
+	if cultivation_gain > 0:
+		parts.append("修为 +%d" % cultivation_gain)
+	if parts.is_empty():
+		return "关系与路线变化"
+	return _join_strings(parts, " / ")
 
 func _difficulty_button(difficulty_id: String) -> Button:
 	var label := DungeonDefs.difficulty_name(difficulty_id)
@@ -955,6 +1409,7 @@ func _difficulty_button(difficulty_id: String) -> Button:
 func _branch_choice_card(branch_id: String) -> PanelContainer:
 	var branch: Dictionary = DungeonDefs.branch(branch_id)
 	var selected := selected_story_branch == branch_id
+	var attempted := StoryService.branch_attempted(state, branch_id)
 	var skin_path := String(STORY_UI_PATHS["chapter_card"])
 	if not ResourceLoader.exists(skin_path):
 		skin_path = String(UI_SKIN_PATHS["inner_panel"])
@@ -965,6 +1420,7 @@ func _branch_choice_card(branch_id: String) -> PanelContainer:
 	box.add_child(top)
 	var button := _choice_button(String(branch.get("name", branch_id)), selected, Callable(self, "_set_story_branch").bind(branch_id))
 	button.custom_minimum_size = Vector2(220, 58)
+	button.disabled = attempted
 	top.add_child(button)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -972,7 +1428,8 @@ func _branch_choice_card(branch_id: String) -> PanelContainer:
 	info.add_child(_text_line("流派", String(branch.get("school", "未知"))))
 	info.add_child(_text_line("试炼", String(branch.get("subtitle", "未知"))))
 	var progress: Dictionary = state.dungeon_progress.get(branch_id, {})
-	info.add_child(_text_line("记录", "胜利 %d / 最高 %s" % [int(progress.get("victories", 0)), _difficulty_display(String(progress.get("best_difficulty", "")))]))
+	var status := "已发生" if attempted else "未发生"
+	info.add_child(_text_line("记录", "%s / 胜利 %d / 最高 %s" % [status, int(progress.get("victories", 0)), _difficulty_display(String(progress.get("best_difficulty", "")))]))
 	var intro := Label.new()
 	intro.text = String(branch.get("intro", ""))
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -982,6 +1439,10 @@ func _branch_choice_card(branch_id: String) -> PanelContainer:
 	return panel
 
 func _set_story_branch(branch_id: String) -> void:
+	if StoryService.branch_attempted(state, branch_id):
+		state.add_log("这条传承已经触发过，不能重复挑战。")
+		_show_story()
+		return
 	selected_story_branch = branch_id
 	_show_story()
 
@@ -990,6 +1451,10 @@ func _set_story_difficulty(difficulty_id: String) -> void:
 	_show_story()
 
 func _start_story_dungeon() -> void:
+	if not StoryService.can_start_branch(state, selected_story_branch):
+		state.add_log("这条传承已经触发过，不能重复挑战。")
+		_show_story()
+		return
 	var encounter: Dictionary = DungeonService.start_branch(state, selected_story_branch, selected_difficulty)
 	SaveService.save_game(state)
 	_start_combat(encounter)
@@ -1000,6 +1465,8 @@ func _difficulty_display(difficulty_id: String) -> String:
 	return DungeonDefs.difficulty_name(difficulty_id)
 
 func _show_refining() -> void:
+	if _redirect_if_death_locked("refining"):
+		return
 	var shell := _build_shell("仙蛊炼制", "res://assets/reference/gu_refining.png", "refining")
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -1027,6 +1494,7 @@ func _show_refining() -> void:
 		center.add_child(_image_or_placeholder(refining_feedback_path, refining_feedback_text, Color(0.16, 0.10, 0.04, 0.86), Vector2(0, 110)))
 	center.add_child(_image_or_placeholder(String(GU_ICON_PATHS.get(result_id, "")), String(result_def["name"]), Color(0.19, 0.12, 0.05, 0.93), Vector2(0, 230)))
 	center.add_child(_text_line("说明", String(recipe["description"])))
+	center.add_child(_text_line("前置蛊虫", _recipe_gu_requirements_text(recipe)))
 	center.add_child(_text_line("基础成功率", "%d%%" % int(float(recipe["base_success"]) * 100.0)))
 	center.add_child(_text_line("预计耗时", "%d 月" % int(recipe["months"])))
 	center.add_child(_section_label("材料消耗"))
@@ -1049,6 +1517,13 @@ func _try_refine() -> void:
 	var result_id := String(recipe["result"])
 	var result_def: Dictionary = GameState.GU_DEFINITIONS[result_id]
 	var costs: Dictionary = recipe["costs"]
+	if not _has_required_gu(recipe):
+		refining_feedback_path = ""
+		refining_feedback_text = "前置蛊虫不足"
+		state.add_log("炼蛊失败：缺少合炼所需的前置蛊虫。")
+		SaveService.save_game(state)
+		_show_refining()
+		return
 	if not state.can_pay(costs):
 		refining_feedback_path = ""
 		refining_feedback_text = "材料不足"
@@ -1057,6 +1532,7 @@ func _try_refine() -> void:
 		_show_refining()
 		return
 	state.pay(costs)
+	_pay_required_gu(recipe)
 	var months: int = int(recipe["months"])
 	var duplicate_unique: bool = bool(result_def.get("unique", false)) and state.unique_gu.has(result_id)
 	if duplicate_unique:
@@ -1089,7 +1565,30 @@ func _try_refine() -> void:
 	SaveService.save_game(state)
 	_show_refining()
 
+func _recipe_gu_requirements_text(recipe: Dictionary) -> String:
+	var requires: Dictionary = recipe.get("requires_gu", {})
+	if requires.is_empty():
+		return "无"
+	var parts: Array = []
+	for gu_id in requires.keys():
+		parts.append("%s x%d" % [state.get_gu_name(String(gu_id)), int(requires[gu_id])])
+	return _join_strings(parts, " / ")
+
+func _has_required_gu(recipe: Dictionary) -> bool:
+	var requires: Dictionary = recipe.get("requires_gu", {})
+	for gu_id in requires.keys():
+		if not state.has_gu(String(gu_id), int(requires[gu_id])):
+			return false
+	return true
+
+func _pay_required_gu(recipe: Dictionary) -> void:
+	var requires: Dictionary = recipe.get("requires_gu", {})
+	for gu_id in requires.keys():
+		state.remove_gu(String(gu_id), int(requires[gu_id]))
+
 func _show_killer_move() -> void:
+	if _redirect_if_death_locked("killer"):
+		return
 	if not state.has_gu(selected_core):
 		var cores: Array = state.get_gu_ids("core")
 		selected_core = String(cores[0]) if cores.size() > 0 else "sword_core"
@@ -1100,48 +1599,51 @@ func _show_killer_move() -> void:
 	shell.add_child(body)
 
 	var left := _add_panel(body, "蛊虫库", Vector2(520, 0))
-	left.add_child(_section_label("核心仙蛊"))
+	var left_content := _scroll_box(left)
+	left_content.add_child(_section_label("核心仙蛊"))
 	for id in state.get_gu_ids("core"):
 		var def: Dictionary = GameState.GU_DEFINITIONS[id]
-		left.add_child(_gu_choice_button(String(id), "%s x%d" % [def["name"], state.gu_inventory[id]], selected_core == id, Callable(self, "_set_core_gu").bind(id)))
-	left.add_child(_section_label("辅助凡蛊"))
+		left_content.add_child(_gu_choice_button(String(id), "%s x%d" % [def["name"], state.gu_inventory[id]], selected_core == id, Callable(self, "_set_core_gu").bind(id)))
+	left_content.add_child(_section_label("辅助凡蛊"))
 	for id in state.get_gu_ids("plugin"):
 		var def: Dictionary = GameState.GU_DEFINITIONS[id]
-		left.add_child(_gu_choice_button(String(id), "%s x%d" % [def["name"], state.gu_inventory[id]], selected_plugins.has(id), Callable(self, "_toggle_plugin").bind(id)))
+		left_content.add_child(_gu_choice_button(String(id), "%s x%d" % [def["name"], state.gu_inventory[id]], selected_plugins.has(id), Callable(self, "_toggle_plugin").bind(id)))
 
 	var move: Dictionary = state.build_killer_move(selected_core, selected_plugins)
 	var center := _add_panel(body, "杀招矩阵", Vector2(760, 0))
-	center.add_child(_matrix_preview(move))
+	var center_content := _scroll_box(center)
+	center_content.add_child(_matrix_preview(move))
 	var action_row := HBoxContainer.new()
 	action_row.add_theme_constant_override("separation", 10)
-	center.add_child(action_row)
+	center_content.add_child(action_row)
 	action_row.add_child(_killer_action_button("保存杀招", Callable(self, "_save_killer_move"), true))
 	action_row.add_child(_killer_action_button("保存为防御脚本", Callable(self, "_save_defense_script"), false))
 	action_row.add_child(_killer_action_button("模拟运行（推进1月）", Callable(self, "_simulate_killer_move"), false))
 	action_row.add_child(_killer_action_button("清空矩阵", Callable(self, "_clear_killer_matrix"), false, "clear_matrix"))
 
 	var right := _add_panel(body, "编译结果", Vector2(560, 0))
-	right.add_child(_killer_result_row("威力", int(move["power"] / 12), COLOR_CYAN, "attr_power"))
-	right.add_child(_killer_result_row("稳定度", int(move["stability"]), COLOR_GREEN if int(move["stability"]) >= 70 else COLOR_GOLD, "attr_stability"))
-	right.add_child(_killer_result_row("异常风险", int(move["risk"]), COLOR_RED if int(move["risk"]) > 35 else COLOR_GOLD, "attr_risk"))
+	var right_content := _scroll_box(right)
+	right_content.add_child(_killer_result_row("威力", int(move["power"] / 12), COLOR_CYAN, "attr_power"))
+	right_content.add_child(_killer_result_row("稳定度", int(move["stability"]), COLOR_GREEN if int(move["stability"]) >= 70 else COLOR_GOLD, "attr_stability"))
+	right_content.add_child(_killer_result_row("异常风险", int(move["risk"]), COLOR_RED if int(move["risk"]) > 35 else COLOR_GOLD, "attr_risk"))
 	var tags: Array = move.get("tags", [])
 	var coverage_text := "单体"
 	if tags.has("split"):
 		coverage_text = "分裂弹道"
 	elif tags.has("pierce"):
 		coverage_text = "单体贯穿"
-	right.add_child(_icon_text_line("灵气消耗", "%d / 次" % int(move["spirit_cost"]), "attr_spirit_cost"))
-	right.add_child(_icon_text_line("覆盖范围", coverage_text, "attr_range"))
-	right.add_child(_icon_text_line("自动寻敌", "是" if tags.has("homing") else "否", "attr_homing"))
-	right.add_child(_text_line("冷却", "%.1f 秒" % float(move["cooldown"])))
-	right.add_child(_killer_diagnosis_box(move))
-	right.add_child(_killer_preview_card())
-	right.add_child(_text_line("当前激活", String(state.get_active_killer_move().get("name", "无"))))
-	right.add_child(_text_line("防御脚本", String(state.get_active_defense_script().get("name", "未保存")) if not state.defense_scripts.is_empty() else "未保存"))
-	right.add_child(_section_label("已保存杀招"))
+	right_content.add_child(_icon_text_line("灵气消耗", "%d / 次" % int(move["spirit_cost"]), "attr_spirit_cost"))
+	right_content.add_child(_icon_text_line("覆盖范围", coverage_text, "attr_range"))
+	right_content.add_child(_icon_text_line("自动寻敌", "是" if tags.has("homing") else "否", "attr_homing"))
+	right_content.add_child(_text_line("冷却", "%.1f 秒" % float(move["cooldown"])))
+	right_content.add_child(_killer_diagnosis_box(move))
+	right_content.add_child(_killer_preview_card())
+	right_content.add_child(_text_line("出战槽位", "%d / 5" % state.get_combat_killer_moves().size()))
+	right_content.add_child(_text_line("防御脚本", String(state.get_active_defense_script().get("name", "未保存")) if not state.defense_scripts.is_empty() else "未保存"))
+	right_content.add_child(_section_label("已保存杀招"))
 	for i in range(state.killer_moves.size()):
 		var saved: Dictionary = state.killer_moves[i]
-		right.add_child(_choice_button(saved.get("name", "杀招"), state.active_killer_move == i, Callable(self, "_set_active_move").bind(i)))
+		right_content.add_child(_saved_killer_move_row(i, saved))
 
 func _clear_killer_matrix() -> void:
 	selected_plugins = []
@@ -1162,12 +1664,20 @@ func _toggle_plugin(id: String) -> void:
 
 func _save_killer_move() -> void:
 	var move: Dictionary = state.build_killer_move(selected_core, selected_plugins)
+	if not _compile_killer_move(move, "保存杀招", true):
+		SaveService.save_game(state)
+		_show_killer_move()
+		return
 	state.add_killer_move(move)
 	SaveService.save_game(state)
 	_show_killer_move()
 
 func _save_defense_script() -> void:
 	var move: Dictionary = state.build_killer_move(selected_core, selected_plugins)
+	if not _compile_killer_move(move, "保存防御脚本", true):
+		SaveService.save_game(state)
+		_show_killer_move()
+		return
 	state.add_defense_script(move)
 	TribulationService.prepare_defense(state)
 	SaveService.save_game(state)
@@ -1175,12 +1685,7 @@ func _save_defense_script() -> void:
 
 func _simulate_killer_move() -> void:
 	var move: Dictionary = state.build_killer_move(selected_core, selected_plugins)
-	WorldClock.advance_months(state, 1, "模拟运行%s" % move["name"])
-	if rng.randi_range(1, 100) <= int(move["risk"]):
-		state.character["hp"] = max(1, int(state.character.get("hp", 100)) - 12)
-		state.add_log("模拟出现反噬：依赖链震荡，生命受损。")
-	else:
-		state.add_log("模拟通过：矩阵稳定，可投入实战。")
+	_compile_killer_move(move, "模拟运行", false)
 	SaveService.save_game(state)
 	_show_killer_move()
 
@@ -1188,6 +1693,64 @@ func _set_active_move(index: int) -> void:
 	state.active_killer_move = index
 	SaveService.save_game(state)
 	_show_killer_move()
+
+func _toggle_combat_move(index: int) -> void:
+	if state.active_combat_moves.has(index):
+		state.set_combat_move_enabled(index, false)
+		state.add_log("杀招已下阵：%s。" % String(state.killer_moves[index].get("name", "杀招")))
+	elif state.active_combat_moves.size() >= 5:
+		state.add_log("战斗最多选择 5 个杀招。")
+	else:
+		state.set_combat_move_enabled(index, true)
+		state.add_log("杀招已设为出战：%s。" % String(state.killer_moves[index].get("name", "杀招")))
+	SaveService.save_game(state)
+	_show_killer_move()
+
+func _saved_killer_move_row(index: int, saved: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	var name_button := _choice_button(String(saved.get("name", "杀招")), state.active_killer_move == index, Callable(self, "_set_active_move").bind(index))
+	name_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_button)
+	var in_battle: bool = state.active_combat_moves.has(index)
+	var battle_button := _button("下阵" if in_battle else "出战", Callable(self, "_toggle_combat_move").bind(index), in_battle)
+	battle_button.custom_minimum_size = Vector2(92, 42)
+	battle_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	row.add_child(battle_button)
+	return row
+
+func _compile_killer_move(move: Dictionary, reason: String, for_save: bool) -> bool:
+	WorldClock.advance_months(state, 1, "%s%s" % [reason, move.get("name", "杀招")])
+	var success_chance: int = clampi(int(move.get("stability", 50)) + 8 - int(move.get("risk", 20)) / 3, 12, 96)
+	if rng.randi_range(1, 100) <= success_chance:
+		state.add_log("%s成功：%s 通过模拟，成功率判定 %d%%。" % [reason, move.get("name", "杀招"), success_chance])
+		return true
+	var lost_gu := _damage_killer_move_components(move)
+	var damage := rng.randi_range(8, 20)
+	state.character["hp"] = max(1, int(state.character.get("hp", 100)) - damage)
+	var lifespan_loss := 15 if for_save else 8
+	state.character["lifespan_days"] = max(0, int(state.character.get("lifespan_days", 0)) - lifespan_loss)
+	state.add_log("%s失败：%s 依赖链反噬，生命 -%d，寿元 -%d 天%s。" % [reason, move.get("name", "杀招"), damage, lifespan_loss, lost_gu])
+	return false
+
+func _damage_killer_move_components(move: Dictionary) -> String:
+	var plugins: Array = move.get("plugins", [])
+	var mortal_plugins: Array = []
+	for plugin_id_value in plugins:
+		var plugin_id := String(plugin_id_value)
+		var gu_def: Dictionary = GameState.GU_DEFINITIONS.get(plugin_id, {})
+		if int(gu_def.get("rank", 1)) < 6 and state.has_gu(plugin_id):
+			mortal_plugins.append(plugin_id)
+	if not mortal_plugins.is_empty():
+		var lost_id := String(mortal_plugins[rng.randi_range(0, mortal_plugins.size() - 1)])
+		state.remove_gu(lost_id, 1)
+		return "，损失凡蛊：%s" % state.get_gu_name(lost_id)
+	var core_id := String(move.get("core", ""))
+	var core_def: Dictionary = GameState.GU_DEFINITIONS.get(core_id, {})
+	if core_id != "" and int(core_def.get("rank", 1)) >= 6 and state.has_gu(core_id):
+		ApertureService.runtime_degrade_gu(state, core_id, 18)
+		return "，仙蛊受创：%s" % state.get_gu_name(core_id)
+	return ""
 
 func _show_dynamic_market() -> void:
 	if state.has_method("ensure_world_defaults"):
@@ -1240,7 +1803,7 @@ func _show_dynamic_market() -> void:
 		right.add_child(_button("交易 / 接单", Callable(self, "_market_trade_selected")))
 		right.add_child(_button("调查真伪（90情报）", Callable(self, "_market_investigate_selected")))
 		right.add_child(_button("散布谣言（120情报）", Callable(self, "_market_rumor_selected")))
-		right.add_child(_warning_line("低信任 NPC 可能抬价、设伏或借订单传播假情报。"))
+		right.add_child(_warning_line("低信任人物可能抬价、设伏或借订单传播假情报。"))
 
 func _sync_selected_market_post() -> void:
 	if MarketService.find_post_index(state, selected_market_post_id) >= 0:
@@ -1314,18 +1877,29 @@ func _active_world_event_count() -> int:
 			count += 1
 	return count
 
+func _has_person_ambush_event() -> bool:
+	for raw_event in state.world_events:
+		var event: Dictionary = raw_event
+		if bool(event.get("resolved", false)):
+			continue
+		var kind := String(event.get("kind", ""))
+		if kind in ["战后袭击窗口", "反噬伏击", "仇敌标记"]:
+			return true
+	return false
+
 func _show_dynamic_npc() -> void:
 	if state.has_method("ensure_world_defaults"):
 		state.ensure_world_defaults()
 	_sync_selected_npc()
-	var shell: VBoxContainer = _build_shell("NPC 利益博弈", "res://assets/reference/npc_dialogue.png", "npc")
+	var shell: VBoxContainer = _build_shell("人物利益博弈", "res://assets/reference/npc_dialogue.png", "npc")
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 12)
 	shell.add_child(body)
 
 	var left: VBoxContainer = _add_panel(body, "五域人物", Vector2(470, 0))
-	for raw_npc in state.npcs:
+	var known_people := _known_people()
+	for raw_npc in known_people:
 		var npc: Dictionary = raw_npc
 		var npc_id: String = String(npc.get("id", ""))
 		var selected: bool = npc_id == selected_npc_id
@@ -1338,11 +1912,11 @@ func _show_dynamic_npc() -> void:
 	var center: VBoxContainer = _add_panel(body, "人物详情", Vector2(840, 0))
 	var npc_index: int = _selected_npc_index()
 	if npc_index < 0:
-		center.add_child(_warning_line("暂无可交互 NPC。"))
+		center.add_child(_warning_line("暂无可交互人物。"))
 	else:
 		var npc: Dictionary = state.npcs[npc_index]
 		var portrait_path: String = "res://assets/characters/npc_%s.png" % String(npc.get("id", "xuanwuzi"))
-		center.add_child(_npc_portrait_view(portrait_path, String(npc.get("name", "NPC"))))
+		center.add_child(_npc_portrait_view(portrait_path, String(npc.get("name", "人物"))))
 		center.add_child(_text_line("姓名", String(npc.get("name", "匿名"))))
 		center.add_child(_text_line("势力", _faction_name(String(npc.get("faction", "")))))
 		center.add_child(_text_line("境界", RealmService.npc_realm_name(npc)))
@@ -1379,26 +1953,34 @@ func _show_dynamic_npc() -> void:
 		right.add_child(_text_line(String(event.get("kind", "事件")), "%s / 威胁%d / %d月止" % [_region_name(String(event.get("region", ""))), int(event.get("severity", 0)), int(event.get("expires_month", 0))]))
 	right.add_child(_section_label("近期日志"))
 	right.add_child(_log_view(state.logs, 9))
-	right.add_child(_warning_line("低信任 NPC 会拒绝、抬价、散布谣言，甚至在你战后虚弱时制造袭击窗口。"))
+	right.add_child(_warning_line("低信任人物会拒绝、抬价、散布谣言，甚至在你战后虚弱时制造袭击窗口。"))
+	if _has_person_ambush_event():
+		right.add_child(_button("迎击人物袭击", Callable(self, "_start_person_ambush_combat"), true))
 
 func _sync_selected_npc() -> void:
 	if _selected_npc_index() >= 0:
 		return
-	if state.npcs.is_empty():
+	var known_people := _known_people()
+	if known_people.is_empty():
 		selected_npc_id = ""
 		return
-	var npc: Dictionary = state.npcs[0]
+	var npc: Dictionary = known_people[0]
 	selected_npc_id = String(npc.get("id", ""))
 
 func _selected_npc_index() -> int:
 	for i in range(state.npcs.size()):
 		var npc: Dictionary = state.npcs[i]
-		if String(npc.get("id", "")) == selected_npc_id:
+		if String(npc.get("id", "")) == selected_npc_id and bool(npc.get("alive", true)) and bool(npc.get("met", false)):
 			return i
 	return -1
 
 func _npc_select(npc_id: String) -> void:
-	selected_npc_id = npc_id
+	for raw_npc in _known_people():
+		var npc: Dictionary = raw_npc
+		if String(npc.get("id", "")) == npc_id:
+			selected_npc_id = npc_id
+			_show_npc()
+			return
 	_show_npc()
 
 func _npc_trade_selected() -> void:
@@ -1418,7 +2000,7 @@ func _npc_trade_selected() -> void:
 		npc["last_action"] = "与玩家完成情报换材料"
 		npc["resources"] = resources
 		state.adjust_morality(1, "公平交易")
-		state.add_log("%s收下情报，交出炼蛊材料 x2。" % String(npc.get("name", "NPC")))
+		state.add_log("%s收下情报，交出炼蛊材料 x2。" % String(npc.get("name", "人物")))
 	else:
 		state.add_log("谈判失败：你缺少情报，或对方材料库存不足。")
 	state.npcs[index] = npc
@@ -1439,7 +2021,7 @@ func _npc_ally_selected() -> void:
 		npc["last_action"] = "与玩家缔结临时盟约"
 		state.add_resource("intel", 90)
 		state.adjust_morality(3, "结盟互助")
-		state.add_log("临时结盟达成：%s提供一条遗迹情报。" % String(npc.get("name", "NPC")))
+		state.add_log("临时结盟达成：%s提供一条遗迹情报。" % String(npc.get("name", "人物")))
 		WorldClock.advance_months(state, 1, "结盟谈判")
 	else:
 		state.add_log("结盟失败：仙元石不足。")
@@ -1463,7 +2045,7 @@ func _npc_probe_selected() -> void:
 		npc["trust"] = clampi(int(npc.get("trust", 0)) - 2, 0, 100)
 		npc["last_action"] = "被玩家旁敲侧击"
 		state.adjust_morality(-1, "暗中试探")
-		state.add_log("打探成功：你从%s处套出“%s”。" % [String(npc.get("name", "NPC")), clue])
+		state.add_log("打探成功：你从%s处套出“%s”。" % [String(npc.get("name", "人物")), clue])
 	state.npcs[index] = npc
 	SaveService.save_game(state)
 	_show_npc()
@@ -1480,12 +2062,12 @@ func _npc_threaten_selected() -> void:
 	if rng.randi_range(1, 100) <= success_chance:
 		state.add_resource("intel", 260)
 		npc["last_action"] = "被玩家威胁后交出线索"
-		state.add_log("威胁奏效：%s交出高价值线索，但仇怨加深。" % String(npc.get("name", "NPC")))
+		state.add_log("威胁奏效：%s交出高价值线索，但仇怨加深。" % String(npc.get("name", "人物")))
 	else:
 		state.character["hp"] = max(1, int(state.character.get("hp", 100)) - 24)
 		_add_world_event("反噬伏击", String(npc.get("id", "")), "player", 72)
 		npc["last_action"] = "反制玩家威胁"
-		state.add_log("威胁失败：%s暗中反击，你受伤撤退。" % String(npc.get("name", "NPC")))
+		state.add_log("威胁失败：%s暗中反击，你受伤撤退。" % String(npc.get("name", "人物")))
 	state.npcs[index] = npc
 	SaveService.save_game(state)
 	_show_npc()
@@ -1501,7 +2083,7 @@ func _npc_mark_enemy_selected() -> void:
 	npc["last_action"] = "被玩家标记为仇敌"
 	_add_world_event("仇敌标记", String(npc.get("id", "")), "player", 68)
 	state.adjust_morality(-4, "标记仇敌")
-	state.add_log("你将%s标记为仇敌，后续可能触发袭击或悬赏。" % String(npc.get("name", "NPC")))
+	state.add_log("你将%s标记为仇敌，后续可能触发袭击或悬赏。" % String(npc.get("name", "人物")))
 	state.npcs[index] = npc
 	SaveService.save_game(state)
 	_show_npc()
@@ -1566,6 +2148,13 @@ func _risk_color(value: int) -> Color:
 		return COLOR_GOLD
 	return COLOR_GREEN
 
+func _lifespan_status_color(status: String) -> Color:
+	if status == LongevityDefs.STATUS_DEAD or status == LongevityDefs.STATUS_DYING or status == LongevityDefs.STATUS_CRITICAL:
+		return COLOR_RED
+	if status == LongevityDefs.STATUS_WARNING:
+		return COLOR_GOLD
+	return COLOR_CYAN
+
 func _trust_color(value: int) -> Color:
 	if value >= 65:
 		return COLOR_GREEN
@@ -1581,6 +2170,11 @@ func _relation_color(value: int) -> Color:
 	return COLOR_GOLD
 
 func _show_market() -> void:
+	if _redirect_if_death_locked("market"):
+		return
+	if not _can_use_market():
+		_show_locked_feature("宝黄天未通", "宝黄天需要六转蛊仙后才能稳定沟通；当前只能通过剧情、人物或线索间接接触订单。", "market", String(SCREEN_BACKGROUND_PATHS["market"]))
+		return
 	_show_dynamic_market()
 	return
 	var shell := _build_shell("宝黄天", "res://assets/reference/market.png", "market")
@@ -1643,9 +2237,14 @@ func _market_rumor() -> void:
 	_show_market()
 
 func _show_npc() -> void:
+	if _redirect_if_death_locked("npc"):
+		return
+	if _known_people_count() == 0:
+		_show_locked_feature("人物未遇", "你还没有在剧情中真正遇到可交互人物。人物会随剧情抉择、交易和敌对事件出现，也可能死亡。", "npc", String(SCREEN_BACKGROUND_PATHS["npc"]))
+		return
 	_show_dynamic_npc()
 	return
-	var shell := _build_shell("NPC 利益交互", "res://assets/reference/npc_dialogue.png", "npc")
+	var shell := _build_shell("人物利益交互", "res://assets/reference/npc_dialogue.png", "npc")
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 12)
@@ -1666,7 +2265,7 @@ func _show_npc() -> void:
 
 	var right := _add_panel(body, "交互日志", Vector2(560, 0))
 	right.add_child(_log_view(state.logs, 12))
-	right.add_child(_warning_line("NPC 行动以自身利益最大化为准，关系不足时可能背叛。"))
+	right.add_child(_warning_line("人物行动以自身利益最大化为准，关系不足时可能背叛。"))
 
 func _npc_trade() -> void:
 	if state.get_resource("intel") >= 160:
@@ -1707,9 +2306,13 @@ func _npc_wait() -> void:
 	_show_npc()
 
 func _start_combat(encounter: Dictionary = {}) -> void:
+	if _redirect_if_death_locked("combat"):
+		return
 	_clear()
 	if encounter.is_empty():
-		encounter = DungeonService.wild_encounter(state)
+		state.add_log("战斗必须由剧情、副本、人物事件、夺寿追杀或灾劫触发。")
+		_show_story()
+		return
 	combat_encounter = encounter.duplicate(true)
 	current_screen = "combat"
 	combat_active = true
@@ -1746,12 +2349,13 @@ func _build_combat_screen() -> void:
 	top.offset_bottom = 92
 	top.add_theme_constant_override("separation", 10)
 	add_child(top)
-	_build_header(top, "实时战斗")
+	_build_header(top, "事件战斗")
 
 	var left_panel := _floating_panel("战斗信息", Rect2(18, 112, 312, 800))
 	var left := _panel_body(left_panel)
+	var first_combat_move: Dictionary = _combat_move_for_slot(0)
 	left.add_child(_text_line("遭遇", CombatService.combat_title(combat_encounter)))
-	left.add_child(_text_line("杀招", String(state.get_active_killer_move().get("name", "未配置"))))
+	left.add_child(_text_line("出战杀招", "%d / 5" % state.get_combat_killer_moves().size()))
 	left.add_child(_text_line("灵气", _format_number(state.get_resource("spirit_qi"))))
 	combat_hp_bar = ProgressBar.new()
 	combat_hp_bar.max_value = int(state.character.get("max_hp", 100))
@@ -1760,17 +2364,15 @@ func _build_combat_screen() -> void:
 	_apply_progress_skin(combat_hp_bar, String(PROGRESS_UI_PATHS["fill_red"]))
 	left.add_child(_labeled_control("生命", combat_hp_bar))
 	combat_cd_bar = ProgressBar.new()
-	combat_cd_bar.max_value = max(0.1, float(state.get_active_killer_move().get("cooldown", 2.0)))
+	combat_cd_bar.max_value = max(0.1, float(first_combat_move.get("cooldown", 2.0)))
 	combat_cd_bar.value = 0
 	combat_cd_bar.show_percentage = false
 	_apply_progress_skin(combat_cd_bar, String(PROGRESS_UI_PATHS["fill_cyan"]))
 	left.add_child(_labeled_control("冷却", combat_cd_bar))
 	left.add_child(_section_label("操作"))
 	left.add_child(_text_line("移动", "W / A / S / D"))
-	left.add_child(_text_line("释放杀招", "Space 或 1"))
-	left.add_child(_text_line("运行时注入", "Q / E / R"))
-	left.add_child(_text_line("矩阵过载", "%d%%" % int(combat_overload)))
-	left.add_child(_button("释放杀招", Callable(self, "_cast_killer_move")))
+	left.add_child(_text_line("释放杀招", "Space 或 1-5"))
+	left.add_child(_button("释放1号杀招", Callable(self, "_cast_killer_move").bind(0)))
 	left.add_child(_button("撤回仙窍", Callable(self, "_retreat_combat")))
 
 	var right_panel := _floating_panel("战斗目标 / 日志", Rect2(1590, 112, 312, 800))
@@ -1788,18 +2390,19 @@ func _build_combat_screen() -> void:
 
 	var bottom := HBoxContainer.new()
 	bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_left = 360
-	bottom.offset_right = -360
+	bottom.offset_left = 160
+	bottom.offset_right = -160
 	bottom.offset_top = -126
 	bottom.offset_bottom = -18
 	bottom.add_theme_constant_override("separation", 10)
 	add_child(bottom)
-	var move: Dictionary = state.get_active_killer_move()
-	bottom.add_child(_hotbar_card("1", String(move.get("name", "杀招")), "威力 %d / 稳定 %d%%" % [int(move.get("power", 0)), int(move.get("stability", 0))]))
-	var injection_ids := _combat_injection_candidates(move)
-	bottom.add_child(_hotbar_card("Q", _injection_title(injection_ids, 0), _injection_desc(injection_ids, 0)))
-	bottom.add_child(_hotbar_card("E", _injection_title(injection_ids, 1), _injection_desc(injection_ids, 1)))
-	bottom.add_child(_hotbar_card("R", _injection_title(injection_ids, 2), _injection_desc(injection_ids, 2)))
+	var combat_moves: Array = state.get_combat_killer_moves()
+	for slot in range(5):
+		var hotbar_move: Dictionary = combat_moves[slot] if slot < combat_moves.size() else {}
+		if hotbar_move.is_empty():
+			bottom.add_child(_hotbar_card(str(slot + 1), "未装配", "在杀招页选择出战杀招"))
+		else:
+			bottom.add_child(_hotbar_card(str(slot + 1), String(hotbar_move.get("name", "杀招")), "威力 %d / 稳定 %d%%" % [int(hotbar_move.get("power", 0)), int(hotbar_move.get("stability", 0))]))
 
 	if combat_message != "":
 		var overlay := _floating_panel("战斗结算", Rect2(650, 350, 620, 280))
@@ -1810,8 +2413,10 @@ func _build_combat_screen() -> void:
 		result.add_theme_font_size_override("font_size", 30)
 		result.add_theme_color_override("font_color", COLOR_GOLD)
 		box.add_child(result)
-		box.add_child(_button("返回仙窍", Callable(self, "_show_aperture")))
-		box.add_child(_button("再次挑战", Callable(self, "_restart_combat")))
+		if LongevityService.is_death_locked(state):
+			box.add_child(_button("查看终局", Callable(self, "_show_longevity"), true))
+		else:
+			box.add_child(_button("返回仙窍", Callable(self, "_show_aperture")))
 	queue_redraw()
 
 func _update_combat(delta: float) -> void:
@@ -1830,14 +2435,9 @@ func _update_combat(delta: float) -> void:
 		combat_player_pos.y = clampf(combat_player_pos.y, battle_rect.position.y + 24.0, battle_rect.end.y - 24.0)
 	elif combat_player_action_time <= 0.0:
 		combat_player_action = "idle"
-	if Input.is_action_just_pressed("cast_1"):
-		_cast_killer_move()
-	if Input.is_action_just_pressed("inject_q"):
-		_inject_runtime_gu(0)
-	if Input.is_action_just_pressed("inject_e"):
-		_inject_runtime_gu(1)
-	if Input.is_action_just_pressed("inject_r"):
-		_inject_runtime_gu(2)
+	for slot in range(5):
+		if Input.is_action_just_pressed("cast_%d" % (slot + 1)):
+			_cast_killer_move(slot)
 	_update_projectiles(delta)
 	_update_effects(delta)
 	_update_enemies(delta)
@@ -1915,10 +2515,19 @@ func _update_enemies(delta: float) -> void:
 			_combat_log("%s 近身攻击，造成 %d 伤害。" % [enemy.get("name", "敌人"), damage])
 		combat_enemies[i] = enemy
 
-func _cast_killer_move() -> void:
+func _combat_move_for_slot(slot_index: int) -> Dictionary:
+	var moves: Array = state.get_combat_killer_moves()
+	if slot_index >= 0 and slot_index < moves.size():
+		return moves[slot_index]
+	return {}
+
+func _cast_killer_move(slot_index: int = 0) -> void:
 	if current_screen != "combat" or not combat_active:
 		return
-	var move: Dictionary = state.get_active_killer_move()
+	var move: Dictionary = _combat_move_for_slot(slot_index)
+	if move.is_empty():
+		_combat_log("第 %d 个战斗槽未装配杀招。" % (slot_index + 1))
+		return
 	var cost: int = int(move.get("spirit_cost", 100))
 	if combat_cooldown > 0.0:
 		_combat_log("杀招冷却中。")
@@ -1928,6 +2537,8 @@ func _cast_killer_move() -> void:
 		return
 	state.add_resource("spirit_qi", -cost)
 	combat_cooldown = float(move.get("cooldown", 2.0))
+	if combat_cd_bar != null:
+		combat_cd_bar.max_value = max(0.1, combat_cooldown)
 	var target := _nearest_enemy_pos(combat_player_pos)
 	var base_dir := (target - combat_player_pos).normalized()
 	if base_dir.length() < 0.01:
@@ -1963,7 +2574,7 @@ func _cast_killer_move() -> void:
 		_add_combat_effect("backlash", combat_player_pos, Vector2(150, 150), 0.45, Color(1.0, 0.35, 0.30, 0.88))
 		_combat_log("杀招依赖震荡，反噬 %d 生命。" % backlash)
 	else:
-		_combat_log("释放 %s。" % move.get("name", "杀招"))
+		_combat_log("释放 %d号：%s。" % [slot_index + 1, move.get("name", "杀招")])
 	_refresh_combat_bars()
 
 func _combat_injection_candidates(move: Dictionary) -> Array:
@@ -2136,16 +2747,15 @@ func _nearest_enemy_pos(from_pos: Vector2) -> Vector2:
 
 func _finish_combat(victory: bool) -> void:
 	combat_active = false
-	var result_text: String = DungeonService.apply_result(state, combat_encounter, victory)
 	if victory:
+		var result_text: String = DungeonService.apply_result(state, combat_encounter, true)
 		WorldClock.advance_months(state, 1, "战斗胜利")
 		state.add_log("战斗胜利：%s。" % result_text)
 		combat_message = "战斗胜利\n%s" % result_text
 	else:
-		var failure: Dictionary = combat_encounter.get("failure", {})
-		WorldClock.advance_months(state, int(failure.get("months", 2)), "战斗失败")
-		state.add_log("战斗失败：%s。" % result_text)
-		combat_message = "战斗失败\n%s" % result_text
+		var death_text: String = LongevityService.handle_combat_death(state, combat_encounter)
+		state.add_log("战斗终局：%s。" % death_text)
+		combat_message = "战斗死亡\n%s" % death_text
 	SaveService.save_game(state)
 	_build_combat_screen()
 
@@ -2257,6 +2867,17 @@ func _draw_actor_sheet(sheet_path: String, foot_center: Vector2, draw_size: Vect
 	var facing := Vector2.RIGHT
 	if typeof(facing_value) == TYPE_VECTOR2:
 		facing = facing_value
+	var source_frame_size := _actor_sheet_frame_size(sheet_path)
+	if _is_compact_actor_sheet(texture, source_frame_size):
+		var compact_frame := int(floor(combat_elapsed * 8.0)) % SPRITE_COMPACT_COLUMNS
+		var compact_row := _compact_sprite_direction_row(facing)
+		var compact_src := Rect2(Vector2(compact_frame * source_frame_size.x, compact_row * source_frame_size.y), Vector2(source_frame_size.x, source_frame_size.y))
+		var compact_scale := draw_size.x / float(source_frame_size.x)
+		var compact_size := Vector2(source_frame_size.x, source_frame_size.y) * compact_scale
+		var compact_foot_anchor := Vector2(float(source_frame_size.x) * 0.5, float(source_frame_size.y) * (SPRITE_FOOT_ANCHOR.y / float(SPRITE_FRAME_SIZE.y)))
+		var compact_top_left := foot_center - compact_foot_anchor * compact_scale
+		draw_texture_rect_region(texture, Rect2(compact_top_left, compact_size), compact_src, color)
+		return true
 	var action_name := action
 	if not SPRITE_ACTION_ROW_OFFSET.has(action_name):
 		action_name = "idle"
@@ -2264,7 +2885,6 @@ func _draw_actor_sheet(sheet_path: String, foot_center: Vector2, draw_size: Vect
 	var frame := int(floor(combat_elapsed * 8.0)) % frame_count
 	var direction_index := _sprite_direction_index(facing)
 	var row := int(SPRITE_ACTION_ROW_OFFSET[action_name]) + direction_index
-	var source_frame_size := _actor_sheet_frame_size(sheet_path)
 	var src := Rect2(Vector2(frame * source_frame_size.x, row * source_frame_size.y), Vector2(source_frame_size.x, source_frame_size.y))
 	var scale := draw_size.x / float(source_frame_size.x)
 	var frame_size := Vector2(source_frame_size.x, source_frame_size.y) * scale
@@ -2277,6 +2897,15 @@ func _actor_sheet_frame_size(sheet_path: String) -> Vector2i:
 	if sheet_path.ends_with("enemy_elite_sheet.png") or sheet_path.find("/boss/") >= 0:
 		return Vector2i(320, 320)
 	return SPRITE_FRAME_SIZE
+
+func _is_compact_actor_sheet(texture: Texture2D, frame_size: Vector2i) -> bool:
+	var texture_size := texture.get_size()
+	return int(texture_size.x) == frame_size.x * SPRITE_COMPACT_COLUMNS and int(texture_size.y) == frame_size.y * SPRITE_COMPACT_ROWS
+
+func _compact_sprite_direction_row(direction: Vector2) -> int:
+	if absf(direction.x) > absf(direction.y):
+		return 2 if direction.x >= 0.0 else 1
+	return 0 if direction.y >= 0.0 else 3
 
 func _sprite_direction_index(direction: Vector2) -> int:
 	if direction.length() < 0.01:
@@ -2306,7 +2935,11 @@ func _draw_effect_sheet_frame(sheet_path: String, center: Vector2, draw_size: Ve
 	var texture: Texture2D = _get_texture(sheet_path)
 	if texture == null:
 		return false
-	var count: int = max(1, frame_count)
+	var texture_size := texture.get_size()
+	var available_frames := int(floor(texture_size.x / float(frame_size.x)))
+	if available_frames <= 0:
+		return false
+	var count: int = max(1, min(frame_count, available_frames))
 	var frame := int(floor(combat_elapsed * 14.0)) % count
 	var src := Rect2(Vector2(frame * frame_size.x, 0), Vector2(frame_size.x, frame_size.y))
 	draw_set_transform(center, rotation, Vector2.ONE)
@@ -2339,6 +2972,8 @@ func _save_and_log() -> void:
 			_show_aperture()
 		"cultivation":
 			_show_cultivation()
+		"longevity", "death":
+			_show_longevity()
 		"refining":
 			_show_refining()
 		"killer":
@@ -2408,6 +3043,20 @@ func _panel_body(panel: PanelContainer) -> VBoxContainer:
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(box)
+	return box
+
+func _scroll_box(parent: VBoxContainer, min_size: Vector2 = Vector2.ZERO) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.follow_focus = true
+	if min_size != Vector2.ZERO:
+		scroll.custom_minimum_size = min_size
+	parent.add_child(scroll)
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 8)
+	scroll.add_child(box)
 	return box
 
 func _style_box(color: Color, border: Color, width: int = 1) -> StyleBoxFlat:
@@ -3207,7 +3856,7 @@ func _gu_info_row(id: String, detail: String) -> HBoxContainer:
 	name_label.add_theme_color_override("font_color", COLOR_GOLD)
 	box.add_child(name_label)
 	var detail_label := Label.new()
-	detail_label.text = detail
+	detail_label.text = "%s / %s" % [state.get_gu_rank_text(id), detail]
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_label.add_theme_color_override("font_color", Color(0.80, 0.76, 0.66, 1.0))
 	box.add_child(detail_label)
@@ -3231,20 +3880,28 @@ func _log_view(source_logs: Array, count: int) -> Control:
 	return scroll
 
 func _log_item(text: String) -> PanelContainer:
-	var panel := _panel_container(Vector2(0, 58), String(LOG_UI_PATHS["item"]), 8)
+	var panel := _panel_container(Vector2(0, 78), String(LOG_UI_PATHS["item"]), 10)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var box := _panel_body(panel)
 	var label := Label.new()
 	label.text = text
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.clip_text = true
-	label.add_theme_color_override("font_color", Color(0.88, 0.84, 0.74, 1.0))
+	label.clip_text = false
+	label.custom_minimum_size = Vector2(0, 42)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_color_override("font_color", Color(0.96, 0.91, 0.78, 1.0))
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.92))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
 	_apply_font(label)
 	box.add_child(label)
 	return panel
 
 func _hotbar_card(key: String, title: String, desc: String) -> PanelContainer:
-	var panel := _panel_container(Vector2(360, 96), String(COMBAT_UI_PATHS["hotbar_slot"]), 12)
+	var panel := _panel_container(Vector2(200, 96), String(COMBAT_UI_PATHS["hotbar_slot"]), 12)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var box := _panel_body(panel)
 	box.add_child(_text_line(key, title))
 	var label := Label.new()
