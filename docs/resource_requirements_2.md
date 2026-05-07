@@ -13,13 +13,13 @@
 
 ## P0：Boss 精灵图
 
-这些文件必须是横向/纵向规则一致的战斗精灵图，透明底，不要白底。当前代码按 `320x320` 单帧读取，动作行顺序为 `idle, walk, cast, hit, death`，每个动作 8 方向，每方向 8 帧；方向顺序与现有 `enemy_elite_sheet.png` 保持一致。
+这些文件统一走 compact boss sheet 工作流，透明底，不要白底。当前代码按 `320x320` 单帧读取，整表为 `4 列 x 4 行` 的 `1280x1280` PNG；行顺序为 `down, left, right, up`，列顺序为 `neutral, left_step, neutral, right_step`。用一张高辨识度的 2.5D 拟 3D 朝向表承载基础移动、站立和施法表现，不再回到超大动作整表。
 
 | 目标路径 | 素材描述 | 建议规格 | 生成要求 |
 |---|---|---:|---|
-| `res://assets/characters/boss/dog_king_will_sheet.png` | 犬王残念 Boss，半人半魂影，身侧有犬魂或兽骨旗影 | 单帧 320x320；总图 2560x12800 PNG 透明底 | 脚底锚点统一在每帧 x=160, y=248；idle/walk/cast/hit/death 都要有，轮廓比普通敌人更大 |
-| `res://assets/characters/boss/xin_king_construct_sheet.png` | 信王机关灵 Boss，炼道机关傀/炉阵灵体，青金机关核心 | 单帧 320x320；总图 2560x12800 PNG 透明底 | 动作要有机关展开、施法阵纹、受击火花；不要太像普通人形 |
-| `res://assets/characters/boss/bao_king_flame_sheet.png` | 爆王火魄 Boss，赤黑炎魂、破碎铠甲、爆裂法焰 | 单帧 320x320；总图 2560x12800 PNG 透明底 | cast 动作要明显蓄爆；death 动作建议火焰坍缩而非倒地 |
+| `res://assets/characters/boss/dog_king_will_sheet.png` | 犬王残念 Boss，半人半魂影，身侧有犬魂或兽骨旗影 | 单帧 320x320；4方向 x 4帧；总图 1280x1280 PNG 透明底 | 脚底锚点统一，轮廓比普通敌人更大；做出犬魂拖尾和残念压迫感 |
+| `res://assets/characters/boss/xin_king_construct_sheet.png` | 信王机关灵 Boss，炼道机关傀/炉阵灵体，青金机关核心 | 单帧 320x320；4方向 x 4帧；总图 1280x1280 PNG 透明底 | 体块偏机关和炉阵，不要像普通人形；轮廓要有展开感和法阵附件 |
+| `res://assets/characters/boss/bao_king_flame_sheet.png` | 爆王火魄 Boss，赤黑炎魂、破碎铠甲、爆裂法焰 | 单帧 320x320；4方向 x 4帧；总图 1280x1280 PNG 透明底 | 火焰体块要明显，朝向切换时保持同一主体，蓄爆姿态在四方向上都可读 |
 
 ## P1：新增流派核心蛊图标
 
@@ -41,9 +41,9 @@
 
 | 目标路径 | 素材描述 | 建议规格 | 生成要求 |
 |---|---|---:|---|
-| `res://assets/effects/sheets/fire_burst_sheet.png` | 爆王线火焰弹道/小范围爆裂特效 | 512x512 单帧；8 帧横向 strip，总 4096x512 PNG 透明底 | 由小火核到爆裂扩散，适合旋转为 0 度直接绘制；不要白底 |
-| `res://assets/effects/sheets/beast_command_aura_sheet.png` | 犬王线奴道魂影/兽令弹道特效 | 256x256 单帧；8 帧横向 strip，总 2048x256 PNG 透明底 | 青绿/灰白魂影，能当弹道也能当召唤光环 |
-| `res://assets/effects/sheets/refine_seal_sheet.png` | 信王线炼道印记/机关封印弹道特效 | 256x256 单帧；8 帧横向 strip，总 2048x256 PNG 透明底 | 炉火印、阵纹展开，中心不要太暗，适合叠在敌人位置 |
+| `res://assets/effects/sheets/fire_burst_sheet.png` | 爆王线火焰弹道/小范围爆裂特效 | 512x512 单帧；4 帧横向 strip；总 2048x512 PNG 透明底 | 由小火核到爆裂扩散，立体火焰体积要清晰，适合代码直接按 0 度绘制 |
+| `res://assets/effects/sheets/beast_command_aura_sheet.png` | 犬王线奴道魂影/兽令弹道特效 | 256x256 单帧；4 帧横向 strip；总 1024x256 PNG 透明底 | 青绿/灰白魂影，既能当弹道也能当召唤光环 |
+| `res://assets/effects/sheets/refine_seal_sheet.png` | 信王线炼道印记/机关封印弹道特效 | 256x256 单帧；4 帧横向 strip；总 1024x256 PNG 透明底 | 炉火印、阵纹展开，中心不要太暗，适合叠在敌人位置 |
 
 ## P2：后续可选剧情立绘
 
@@ -52,4 +52,3 @@
 | `res://assets/characters/story/dog_king_portrait.png` | 犬王残念剧情立绘 | 768x1024 PNG 透明底 | 半身像，面向镜头 3/4 角度，带犬魂或兽骨元素 |
 | `res://assets/characters/story/xin_king_portrait.png` | 信王残念剧情立绘 | 768x1024 PNG 透明底 | 炼道/机关气质，手持炉印或阵盘 |
 | `res://assets/characters/story/bao_king_portrait.png` | 爆王残念剧情立绘 | 768x1024 PNG 透明底 | 赤黑火焰气质，爆裂但不要遮脸 |
-

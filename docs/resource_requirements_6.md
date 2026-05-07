@@ -23,11 +23,11 @@
 | `res://assets/ui/gu/time_anchor_gu.png` | 宙锚蛊图标：五转凡蛊，青铜锚点、时轮纹路 | 256x256 PNG 透明底 | 春秋蝉合炼前置 |
 | `res://assets/ui/gu/spring_autumn_cicada.png` | 春秋蝉图标：六转唯一仙蛊，蝉翼、春秋双色、时间涟漪 | 256x256 PNG 透明底 | 死亡回档例外 |
 | `res://assets/ui/gu/rank_badge_1_9.png` | 蛊虫转数徽章系列：一转到九转，不带蛊名 | 9 张，每张 96x48 PNG 透明底 | 库存和炼蛊详情后续接入 |
-| `res://assets/characters/story/gu_yue_pursuer_sheet.png` | 古月追兵精灵表，8方向，idle/walk/cast/hit/death 五行动 | 2048x1280 PNG 透明底 | 每帧 256x256 |
+| `res://assets/characters/story/gu_yue_pursuer_sheet.png` | 古月追兵精灵表，白靛战袍、锐利剑势与冷色符片要清晰 | 1024x1024 PNG 透明底 | 每帧 256x256；4 行 x 4 列 compact sheet，行顺序 `down/left/right/up` |
 | `res://assets/characters/story/gu_yue_elder_portrait.png` | 古月山寨长老半身像，暗色写实/国风奇幻 | 768x1024 PNG 透明底 | 剧情人物详情后续接入 |
 | `res://assets/characters/story/branch_clansman_portrait.png` | 旁支少年/幸存者半身像 | 768x1024 PNG 透明底 | 善恶抉择反馈 |
-| `res://assets/effects/sheets/substitute_life_break_sheet.png` | 替命蛊破碎挡死特效，8帧横排 | 2048x256 PNG 透明底 | 每帧 256x256 |
-| `res://assets/effects/sheets/spring_autumn_rebirth_sheet.png` | 春秋蝉逆流特效，青绿/金色时间涡旋，12帧横排 | 6144x512 PNG 透明底 | 每帧 512x512 |
+| `res://assets/effects/sheets/substitute_life_break_sheet.png` | 替命蛊破碎挡死特效，1x4 条带 | 1024x256 PNG 透明底 | 每帧 256x256 |
+| `res://assets/effects/sheets/spring_autumn_rebirth_sheet.png` | 春秋蝉逆流特效，青绿/金色时间涡旋，1x4 条带 | 2048x512 PNG 透明底 | 每帧 512x512 |
 | `res://assets/audio/sfx/combat_true_death.ogg` | 战斗真实死亡音效，低沉断裂感 | 3-5 秒 OGG | 后续接入 |
 | `res://assets/audio/sfx/spring_autumn_rebirth.ogg` | 春秋蝉逆流音效，时间倒卷后骤停 | 4-6 秒 OGG | 后续接入 |
 
@@ -48,7 +48,7 @@
 | `res://assets/ui/killer/compile_result_failure_9slice.png` | 杀招模拟失败结果框，暗红反噬裂纹，能放日志文字 | 560x140 PNG 透明底 | 9-slice 边距 40px |
 | `res://assets/ui/killer/combat_loadout_slot_9slice.png` | 出战杀招槽位：用于 1-5 战斗热键，暗金框，不带文字 | 240x110 PNG 透明底 | 9-slice 边距 32px |
 | `res://assets/ui/killer/gu_damaged_overlay.png` | 蛊虫受创叠层：裂纹/暗红噪声，透明底 | 256x256 PNG 透明底 | 杀招模拟失败时提示仙蛊受伤 |
-| `res://assets/effects/sheets/killer_compile_success_sheet.png` | 杀招矩阵模拟成功特效，青金线路点亮，8帧横排 | 2048x256 PNG 透明底 | 每帧 256x256 |
-| `res://assets/effects/sheets/killer_compile_backlash_sheet.png` | 杀招矩阵反噬特效，黑红裂光爆开，8帧横排 | 2048x256 PNG 透明底 | 每帧 256x256 |
+| `res://assets/effects/sheets/killer_compile_success_sheet.png` | 杀招矩阵模拟成功特效，青金线路点亮，1x4 条带 | 1024x256 PNG 透明底 | 每帧 256x256 |
+| `res://assets/effects/sheets/killer_compile_backlash_sheet.png` | 杀招矩阵反噬特效，黑红裂光爆开，1x4 条带 | 1024x256 PNG 透明底 | 每帧 256x256 |
 | `res://assets/audio/sfx/killer_compile_success.ogg` | 杀招模拟成功音效，短促灵光连通 | 1-2 秒 OGG | 后续接入 |
 | `res://assets/audio/sfx/killer_compile_failure.ogg` | 杀招模拟失败/凡蛊损毁音效 | 1-3 秒 OGG | 后续接入 |

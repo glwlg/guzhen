@@ -6,6 +6,8 @@ const ApertureService := preload("res://scripts/aperture_service.gd")
 const TribulationService := preload("res://scripts/tribulation_service.gd")
 const CultivationService := preload("res://scripts/cultivation_service.gd")
 const LongevityService := preload("res://scripts/longevity_service.gd")
+const GuService := preload("res://scripts/gu_service.gd")
+const MapService := preload("res://scripts/map_service.gd")
 
 const RANK_NAMES := ["一转", "二转", "三转", "四转", "五转", "六转", "七转", "八转", "九转"]
 const RANK_STAGES := ["初阶", "中阶", "高阶", "巅峰"]
@@ -279,6 +281,8 @@ var character := {}
 var resources := {}
 var aperture := {}
 var gu_inventory := {}
+var gu_instances := {}
+var gu_instance_next_id := 1
 var unique_gu := {}
 var killer_moves := []
 var active_killer_move := -1
@@ -309,6 +313,12 @@ var longevity_leads := []
 var longevity_gu_inventory := {}
 var reincarnation_history := []
 var ending_flags := {}
+var current_map_id := "qingmao_outer"
+var map_position := {}
+var visited_maps := []
+var resolved_map_triggers := {}
+var discovered_locations := []
+var aperture_map_state := {}
 
 func _init() -> void:
 	reset_defaults()
@@ -355,6 +365,8 @@ func reset_defaults() -> void:
 		"warnings": []
 	}
 	gu_inventory = {}
+	gu_instances = {}
+	gu_instance_next_id = 1
 	unique_gu = {}
 	killer_moves = []
 	npc = {"name": "玄雾子", "relation": 18, "trust": 36, "urgency": 64}
@@ -381,6 +393,12 @@ func reset_defaults() -> void:
 	longevity_gu_inventory = {"mortal": 0, "earth": 0, "heaven": 0}
 	reincarnation_history = []
 	ending_flags = {}
+	current_map_id = "qingmao_outer"
+	map_position = {}
+	visited_maps = []
+	resolved_map_triggers = {}
+	discovered_locations = []
+	aperture_map_state = {}
 	logs = []
 	add_log("新存档已初始化。寿元持续流逝，一切行为都会留下代价。")
 
@@ -449,6 +467,10 @@ func ensure_world_defaults() -> void:
 	if typeof(active_combat_moves) != TYPE_ARRAY:
 		active_combat_moves = []
 	_cleanup_active_combat_moves()
+	if typeof(gu_instances) != TYPE_DICTIONARY:
+		gu_instances = {}
+	gu_instance_next_id = max(1, int(gu_instance_next_id))
+	GuService.ensure_instance_state(self)
 	if typeof(ascension_state) != TYPE_DICTIONARY:
 		ascension_state = {}
 	if typeof(breakthrough_history) != TYPE_ARRAY:
@@ -461,6 +483,7 @@ func ensure_world_defaults() -> void:
 	TribulationService.ensure_tribulation_state(self)
 	CultivationService.ensure_cultivation_state(self)
 	LongevityService.ensure_longevity_state(self)
+	MapService.ensure_map_state(self)
 
 func ensure_character_defaults() -> void:
 	character = RealmService.migrate_character(character)
@@ -545,8 +568,10 @@ func setup_new_character(name_value: String, gender_value: String, origin_value:
 		aperture["conflict_rate"] += 8
 		adjust_morality(-6, "出身天赋")
 	character["dao_marks"] = dao_marks
+	GuService.ensure_instance_state(self)
 	CultivationService.ensure_cultivation_state(self)
 	LongevityService.ensure_longevity_state(self)
+	MapService.setup_new_map_state(self)
 	add_log("创建角色：%s，主修%s，寿元 %s。" % [character["name"], primary_school, format_lifespan()])
 
 func format_lifespan() -> String:
@@ -585,20 +610,15 @@ func pay(costs: Dictionary) -> void:
 		add_resource(id, -int(costs[id]))
 
 func has_gu(id: String, amount: int = 1) -> bool:
-	return int(gu_inventory.get(id, 0)) >= amount
+	return GuService.has_gu(self, id, amount)
 
 func add_gu(id: String, amount: int = 1) -> void:
-	gu_inventory[id] = int(gu_inventory.get(id, 0)) + amount
-	if bool(GU_DEFINITIONS.get(id, {}).get("unique", false)):
-		unique_gu[id] = character.get("name", "玩家")
+	GuService.add_gu(self, id, amount)
 	ApertureService.ensure_ecology_state(self)
 
 func remove_gu(id: String, amount: int = 1) -> bool:
-	if not has_gu(id, amount):
+	if not GuService.remove_gu(self, id, amount):
 		return false
-	gu_inventory[id] = int(gu_inventory[id]) - amount
-	if int(gu_inventory[id]) <= 0:
-		gu_inventory.erase(id)
 	ApertureService.ensure_ecology_state(self)
 	return true
 
@@ -608,9 +628,12 @@ func get_gu_name(id: String) -> String:
 
 func get_gu_rank_text(id: String) -> String:
 	var def: Dictionary = GU_DEFINITIONS.get(id, {})
-	var rank: int = clampi(int(def.get("rank", 1)), 1, 9)
+	var rank: int = GuService.best_rank(self, id) if has_gu(id) else clampi(int(def.get("rank", 1)), 1, 9)
 	var tier := "仙蛊" if rank >= 6 else "凡蛊"
 	return "%s%s" % [RANK_NAMES[rank - 1], tier]
+
+func get_gu_status_text(id: String) -> String:
+	return GuService.status_text(self, id)
 
 func get_gu_ids(type_filter: String = "") -> Array:
 	var ids: Array = []
@@ -622,17 +645,19 @@ func get_gu_ids(type_filter: String = "") -> Array:
 
 func build_killer_move(core_id: String, plugin_ids: Array) -> Dictionary:
 	var core: Dictionary = GU_DEFINITIONS.get(core_id, {})
-	var power: int = int(core.get("power", 0))
-	var spirit_cost: int = int(core.get("spirit_cost", 0))
-	var stability: int = int(core.get("stability", 70))
+	var core_modifier: Dictionary = GuService.move_component_modifier(self, core_id)
+	var power: int = int(round(float(core.get("power", 0)) * float(core_modifier.get("power_multiplier", 1.0))))
+	var spirit_cost: int = int(round(float(core.get("spirit_cost", 0)) * float(core_modifier.get("spirit_multiplier", 1.0))))
+	var stability: int = int(core.get("stability", 70)) + int(core_modifier.get("stability_delta", 0))
 	var cooldown: float = float(core.get("cooldown", 2.0))
 	var tags: Array = []
 	var plugin_names: Array = []
 	for plugin_id in plugin_ids:
 		var plugin: Dictionary = GU_DEFINITIONS.get(plugin_id, {})
-		power += int(plugin.get("power", 0))
-		spirit_cost += int(plugin.get("spirit_cost", 0))
-		stability += int(plugin.get("stability", 0))
+		var plugin_modifier: Dictionary = GuService.move_component_modifier(self, String(plugin_id))
+		power += int(round(float(plugin.get("power", 0)) * float(plugin_modifier.get("power_multiplier", 1.0))))
+		spirit_cost += int(round(float(plugin.get("spirit_cost", 0)) * float(plugin_modifier.get("spirit_multiplier", 1.0))))
+		stability += int(plugin.get("stability", 0)) + int(plugin_modifier.get("stability_delta", 0))
 		cooldown += float(plugin.get("cooldown", 0.0))
 		var tag: String = String(plugin.get("tag", ""))
 		if tag != "":
@@ -655,7 +680,8 @@ func build_killer_move(core_id: String, plugin_ids: Array) -> Dictionary:
 		"risk": risk,
 		"cooldown": cooldown,
 		"tags": tags,
-		"condition_penalty": condition_penalty
+		"condition_penalty": condition_penalty,
+		"core_rank": int(core_modifier.get("rank", int(core.get("rank", 1))))
 	}
 
 func _join_strings(parts: Array, separator: String) -> String:
@@ -758,6 +784,8 @@ func to_dict() -> Dictionary:
 		"resources": resources,
 		"aperture": aperture,
 		"gu_inventory": gu_inventory,
+		"gu_instances": gu_instances,
+		"gu_instance_next_id": gu_instance_next_id,
 		"unique_gu": unique_gu,
 		"killer_moves": killer_moves,
 		"active_killer_move": active_killer_move,
@@ -787,7 +815,13 @@ func to_dict() -> Dictionary:
 		"longevity_leads": longevity_leads,
 		"longevity_gu_inventory": longevity_gu_inventory,
 		"reincarnation_history": reincarnation_history,
-		"ending_flags": ending_flags
+		"ending_flags": ending_flags,
+		"current_map_id": current_map_id,
+		"map_position": map_position,
+		"visited_maps": visited_maps,
+		"resolved_map_triggers": resolved_map_triggers,
+		"discovered_locations": discovered_locations,
+		"aperture_map_state": aperture_map_state
 	}
 
 static func from_dict(data: Dictionary) -> RefCounted:
@@ -801,6 +835,9 @@ static func from_dict(data: Dictionary) -> RefCounted:
 		state.aperture = data["aperture"]
 	if typeof(data.get("gu_inventory", null)) == TYPE_DICTIONARY:
 		state.gu_inventory = data["gu_inventory"]
+	if typeof(data.get("gu_instances", null)) == TYPE_DICTIONARY:
+		state.gu_instances = data["gu_instances"]
+	state.gu_instance_next_id = int(data.get("gu_instance_next_id", state.gu_instance_next_id))
 	if typeof(data.get("unique_gu", null)) == TYPE_DICTIONARY:
 		state.unique_gu = data["unique_gu"]
 	if typeof(data.get("killer_moves", null)) == TYPE_ARRAY:
@@ -854,5 +891,16 @@ static func from_dict(data: Dictionary) -> RefCounted:
 		state.reincarnation_history = data["reincarnation_history"]
 	if typeof(data.get("ending_flags", null)) == TYPE_DICTIONARY:
 		state.ending_flags = data["ending_flags"]
+	state.current_map_id = String(data.get("current_map_id", state.current_map_id))
+	if typeof(data.get("map_position", null)) == TYPE_DICTIONARY:
+		state.map_position = data["map_position"]
+	if typeof(data.get("visited_maps", null)) == TYPE_ARRAY:
+		state.visited_maps = data["visited_maps"]
+	if typeof(data.get("resolved_map_triggers", null)) == TYPE_DICTIONARY:
+		state.resolved_map_triggers = data["resolved_map_triggers"]
+	if typeof(data.get("discovered_locations", null)) == TYPE_ARRAY:
+		state.discovered_locations = data["discovered_locations"]
+	if typeof(data.get("aperture_map_state", null)) == TYPE_DICTIONARY:
+		state.aperture_map_state = data["aperture_map_state"]
 	state.ensure_world_defaults()
 	return state

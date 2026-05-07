@@ -17,9 +17,9 @@
 | `res://assets/ui/longevity/lead_status_badge_fake.png` | “假情报”状态徽章，暗红/裂纹警告样式 | 180x64 PNG 透明底 | 同系列 |
 | `res://assets/ui/icons/longevity_gu.png` | 寿蛊图标：白金/翠绿小虫或沙漏虫，透明底，轮廓清晰 | 256x256 PNG | 库存/奖励 |
 | `res://assets/ui/icons/death_warning.png` | 濒死警告图标：破碎沙漏或熄灭命火，透明底 | 256x256 PNG | HUD 告警 |
-| `res://assets/characters/enemies/lifespan_hunter_sheet.png` | 夺寿追杀者精灵表，俯视/斜俯视，8方向，idle/walk/cast/hit/death 五行动关键帧 | 2048x1280 PNG 透明底 | 每帧 256x256，行顺序保持项目现有 sheet 规范 |
-| `res://assets/effects/sheets/longevity_gu_use_sheet.png` | 使用寿蛊续命特效，青金命火回流，8帧横排 | 2048x256 PNG 透明底 | 每帧 256x256 |
-| `res://assets/effects/sheets/death_fade_sheet.png` | 寿元归零黑红消散特效，10帧横排 | 2560x256 PNG 透明底 | 每帧 256x256 |
+| `res://assets/characters/enemies/lifespan_hunter_sheet.png` | 夺寿追杀者精灵表，俯视/斜俯视 2.5D，镰链与吸寿绿焰要明显 | 1024x1024 PNG 透明底 | 每帧 256x256；4 行 x 4 列 compact sheet，行顺序 `down/left/right/up` |
+| `res://assets/effects/sheets/longevity_gu_use_sheet.png` | 使用寿蛊续命特效，青金命火回流，1x4 条带 | 1024x256 PNG 透明底 | 每帧 256x256 |
+| `res://assets/effects/sheets/death_fade_sheet.png` | 寿元归零黑红消散特效，1x4 条带 | 1024x256 PNG 透明底 | 每帧 256x256 |
 | `res://assets/audio/sfx/lifespan_warning.ogg` | 寿元危机短促警告音，低频沙漏/心跳质感 | 1-2 秒 OGG | 后续接入 |
 | `res://assets/audio/sfx/longevity_gu_use.ogg` | 寿蛊续命音效，低沉后回升，有“命火复燃”的爆点 | 2-4 秒 OGG | 后续接入 |
 | `res://assets/audio/sfx/death_state.ogg` | 进入死亡状态音效，压迫、空旷、不可逆 | 3-5 秒 OGG | 后续接入 |

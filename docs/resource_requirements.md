@@ -123,7 +123,7 @@
 
 ## P4：角色与战斗精灵图
 
-当前战斗精灵图改用 `agent-sprite-forge/generate2dsprite` 的小表工作流：先生成低复杂度、可人工检查的 compact sheet，再本地抠底、缩放和导入。不要再一次性要求 `2048x10240` 或 `2560x12800` 这类超大整表；那会让模型把角色细节压得很低，切帧也更难校准。
+当前战斗精灵图改用 `agent-sprite-forge/generate2dsprite` 的小表工作流：先生成低复杂度、可人工检查的 compact sheet，再本地抠底、缩放和导入。不要再一次性要求超大动作整表；那会让模型把角色细节压得很低，切帧也更难校准。
 
 ### 统一精灵图规范
 
@@ -133,15 +133,15 @@
 - 动作策略：当前代码用这张 compact sheet 驱动站立、移动、施法、受击等基础朝向表现。后续如果需要更强动作，再按同样规范追加单独的 `cast_*.png`、`hit_*.png`、`death_*.png` 小 strip，不要回到超大整表。
 - 视角：斜俯视 2.5D，约 45° 俯角，匹配 `res://assets/backgrounds/battle_ruins.png`。不要正面半身立绘，不要纯横版侧视。
 - 锚点：每帧脚底/漂浮底部锚点保持在单元格下方中心附近，角色不得跨出单元格，四周保留足够透明边。
-- 风格：暗黑修仙、黑金/旧金衣饰、青绿法力点缀，像素精灵要清晰可读，缩小到战斗场景尺寸后仍能分辨轮廓。
-- 生成提示词必须强调：`exactly 4 columns and 4 rows`、`no grid lines`、`same character identity`、`same bounding box`、`same pixel scale`、`no text`、`solid flat #FF00FF background`。
+- 风格：暗黑修仙、黑金/旧金衣饰、青绿法力点缀，采用拟 3D / 2.5D 斜俯视小人表现，体块和材质要清晰，缩小到战斗场景尺寸后仍能分辨轮廓。
+- 生成提示词必须强调：`exactly 4 columns and 4 rows`、`no grid lines`、`same character identity`、`same bounding box`、`same apparent scale`、`no text`、`solid flat #FF00FF background`。
 
 ### 角色 compact sheet
 
 | 目标路径 | 精灵图描述 | 帧规格与排布 | 生成提示词要点 |
 |---|---|---:|---|
-| `res://assets/characters/sheets/player_male_sheet.png` | 男主战斗精灵图：黑金破损法袍、剑道/散修气质，腰间或背后有小型剑形蛊器，青绿法力点缀，轮廓干净。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | male dark cultivation swordsman, black torn robe, old-gold trim, subtle cyan-green occult accents, 2.5D top-down pixel-art sprite |
-| `res://assets/characters/sheets/player_female_sheet.png` | 女主战斗精灵图：与男主同体型比例和锚点，长发、发饰、长袖/轻甲差异，黑金法袍和青绿法力点缀。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | female dark cultivation swordswoman, black torn robe, old-gold trim, hair ornament, same pixel scale as male player |
+| `res://assets/characters/sheets/player_male_sheet.png` | 男主战斗精灵图：黑金破损法袍、剑道/散修气质，腰间或背后有小型剑形蛊器，青绿法力点缀，轮廓干净。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | male dark cultivation swordsman, black torn robe, old-gold trim, subtle cyan-green occult accents, stylized 3D miniature look, 2.5D top-down |
+| `res://assets/characters/sheets/player_female_sheet.png` | 女主战斗精灵图：与男主同体型比例和锚点，长发、发饰、长袖/轻甲差异，黑金法袍和青绿法力点缀。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | female dark cultivation swordswoman, black torn robe, old-gold trim, hair ornament, same apparent scale as male player, stylized 3D miniature look |
 | `res://assets/characters/sheets/enemy_cultivator_sheet.png` | 通用敌方蛊师/蛊仙：暗紫黑法袍、敌意法力光、肩部更尖，轮廓要和玩家明显区分。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | hostile dark cultivator, black-purple ragged robe, gaunt silhouette, cracked old-gold trim, compact purple aura |
 | `res://assets/characters/sheets/enemy_elite_sheet.png` | 精英敌人：更高阶、更宽的轮廓，黑金法袍甲、披风、魂影碎片或小型法阵残片。 | 320x320 单帧；4方向 x 4帧；总 1280x1280 PNG 透明底 | elite dark cultivator, imposing silhouette, tattered cape, close smoky soul fragments, larger 320px frame |
 | `res://assets/characters/sheets/npc_cultivator_sheet.png` | 中立/盟友 NPC：灰黑/灰金法袍，青色或玉色点缀，气质比敌人克制，不要带强敌意光效。 | 256x256 单帧；4方向 x 4帧；总 1024x1024 PNG 透明底 | neutral allied cultivator, gray-black robe, muted old-gold and cyan-green trim, calm silhouette |

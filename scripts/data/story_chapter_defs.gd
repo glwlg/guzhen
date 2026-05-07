@@ -225,18 +225,166 @@ const CHAPTERS := {
 	"bai_gu_mountain": {
 		"name": "白骨山逃亡",
 		"act": "第三章",
-		"kind": "planned",
+		"kind": "choice",
 		"default_unlocked": false,
+		"prerequisites": ["qingmao_crisis"],
 		"background": "res://assets/backgrounds/story/bai_gu_mountain.png",
-		"summary": "逃亡、伪装、夺取白骨传承。后续实现。"
+		"summary": "离开青茅山后，追兵、商队和白骨传承同时出现。你必须在活命、夺蛊和站队之间选一条路。",
+		"unlocks": ["shang_clan_city"],
+		"choices": [
+			{
+				"id": "swear_bone_pact",
+				"title": "与冷面同路人立下毒誓",
+				"body": "共享逃亡路线与白骨山入口情报，先借力活下去，再考虑将来翻脸。",
+				"costs": {"spirit_qi": 900, "intel": 120},
+				"rewards": {"intel": 220, "materials": 1},
+				"cultivation_exp": 140,
+				"morality_delta": -1,
+				"log": "白骨山逃亡：你与一名冷面同路人互立毒誓，换来短暂同行与入口情报。"
+			},
+			{
+				"id": "raid_bone_hall",
+				"title": "夜闯白骨殿夺残方",
+				"body": "趁追兵未合围，强闯白骨殿，从守卫和机关手里抢一段能换来后路的残方。",
+				"costs": {"spirit_qi": 1400},
+				"rewards": {"materials": 3, "intel": 100},
+				"morality_delta": -3,
+				"encounter": {
+					"id": "story_baigu_bone_hall",
+					"name": "白骨殿夺方",
+					"objective": "击退守殿者，夺走残方",
+					"background": "res://assets/backgrounds/story/bai_gu_mountain.png",
+					"branch_id": "story_baigu_bone_hall",
+					"story_chapter_id": "bai_gu_mountain",
+					"difficulty_id": "normal",
+					"rewards": {"immortal_stone": 320, "intel": 140, "materials": 3},
+					"failure": {"lifespan_loss": 0, "months": 0},
+					"morality_delta": -2,
+					"risk": 56,
+					"gu_reward": "guard_plugin",
+					"enemies": [
+						{"name": "白骨守殿者", "sheet": "enemy_elite", "hp": 620, "max_hp": 620, "speed": 98, "damage_min": 10, "damage_max": 18, "pos_ratio": Vector2(0.72, 0.42)},
+						{"name": "搜山追兵", "sheet": "enemy", "hp": 420, "max_hp": 420, "speed": 128, "damage_min": 7, "damage_max": 14, "pos_ratio": Vector2(0.82, 0.60)}
+					]
+				},
+				"log": "白骨山逃亡：你趁夜强闯白骨殿，准备从死人嘴里抢一条活路。"
+			},
+			{
+				"id": "sell_escape_route",
+				"title": "卖掉逃亡者的路",
+				"body": "把一批幸存者和旁支少年藏身路线卖给追兵，自己换出山时机与黑市赏钱。",
+				"costs": {"intel": 80},
+				"rewards": {"immortal_stone": 420, "intel": 160},
+				"meet_npcs": ["guixin"],
+				"kill_npcs": ["branch_clansman"],
+				"morality_delta": -8,
+				"log": "白骨山逃亡：你卖掉了一条逃生线，自己脱身了，别人却没能走出去。"
+			},
+			{
+				"id": "hide_in_caravan",
+				"title": "伪装成商队脚夫",
+				"body": "花钱、换衣、改气息，借商队外壳穿过白骨山，把追兵甩在岔路上。",
+				"costs": {"immortal_stone": 180, "intel": 140},
+				"rewards": {"intel": 260, "materials": 2},
+				"meet_npcs": ["qingluan"],
+				"gu_rewards": ["stealth_plugin"],
+				"morality_delta": 1,
+				"log": "白骨山逃亡：你混入商队出山，第一次真正摸到了商路与人脉的门。"
+			},
+			{
+				"id": "save_wounded_refiner",
+				"title": "护送负伤炼道师出山",
+				"body": "绕远路护送一名负伤炼道师，换一张入商家城的门路和更稳的后续资源。",
+				"costs": {"spirit_qi": 1100, "immortal_stone": 120},
+				"rewards": {"intel": 200, "materials": 2, "spirit_qi": 1200},
+				"meet_npcs": ["xuanwuzi"],
+				"cultivation_exp": 120,
+				"morality_delta": 4,
+				"log": "白骨山逃亡：你护送伤者走出白骨山，对方替你在城里留了一条门路。"
+			}
+		]
 	},
 	"shang_clan_city": {
 		"name": "商家城",
 		"act": "第四章",
-		"kind": "planned",
+		"kind": "choice",
 		"default_unlocked": false,
+		"prerequisites": ["bai_gu_mountain"],
 		"background": "res://assets/backgrounds/story/shang_clan_city.png",
-		"summary": "交易、赌石、人物结盟与名声经营。后续实现。"
+		"summary": "商家城看重利益，也看重名声。你可以斗场扬名、黑市套利、结盟铺路，或者直接为三王山买一张门票。",
+		"unlocks": ["three_kings_mountain"],
+		"choices": [
+			{
+				"id": "arena_fame",
+				"title": "进斗场扬名",
+				"body": "靠一场硬仗把名字挂上斗场榜单，换资源、名声和入山资格。",
+				"costs": {"spirit_qi": 1200},
+				"rewards": {"intel": 180, "immortal_stone": 260},
+				"meet_npcs": ["chixiao"],
+				"morality_delta": 1,
+				"encounter": {
+					"id": "story_shang_arena",
+					"name": "商家城斗场",
+					"objective": "击败斗场对手，拿下资格签",
+					"background": "res://assets/backgrounds/story/shang_clan_city.png",
+					"branch_id": "story_shang_arena",
+					"story_chapter_id": "shang_clan_city",
+					"difficulty_id": "normal",
+					"rewards": {"immortal_stone": 420, "intel": 180, "materials": 2},
+					"failure": {"lifespan_loss": 0, "months": 0},
+					"morality_delta": 0,
+					"risk": 48,
+					"gu_reward": "pierce_plugin",
+					"enemies": [
+						{"name": "斗场守擂者", "sheet": "enemy_elite", "hp": 680, "max_hp": 680, "speed": 104, "damage_min": 11, "damage_max": 20, "pos_ratio": Vector2(0.74, 0.40)},
+						{"name": "驭兽副手", "sheet": "summoned_soul", "hp": 380, "max_hp": 380, "speed": 132, "damage_min": 6, "damage_max": 12, "pos_ratio": Vector2(0.82, 0.62)}
+					]
+				},
+				"log": "商家城：你踏进斗场，用最直接的方式换取了抬头说话的资格。"
+			},
+			{
+				"id": "black_market_recipe",
+				"title": "黑市收残方",
+				"body": "拿情报和石头去换一截残方，赌它能在三王山前替你拼出关键一块。",
+				"costs": {"immortal_stone": 520, "intel": 220},
+				"rewards": {"materials": 4, "intel": 120},
+				"meet_npcs": ["guixin"],
+				"gu_rewards": ["split_plugin"],
+				"morality_delta": -2,
+				"log": "商家城：你在黑市收下一截残方，也让更多人知道你在为大传承做准备。"
+			},
+			{
+				"id": "ally_qingluan_trade",
+				"title": "借青鸾仙子铺商路",
+				"body": "让出一部分利润，与散修商路结盟，换取更稳的资源和更干净的入山身份。",
+				"costs": {"immortal_stone": 260},
+				"rewards": {"spirit_qi": 2600, "intel": 200, "materials": 1},
+				"meet_npcs": ["qingluan"],
+				"cultivation_exp": 120,
+				"morality_delta": 2,
+				"log": "商家城：你把利润分出去，换来一条能长期走下去的商路。"
+			},
+			{
+				"id": "shadow_patronage",
+				"title": "投靠暗线庇护",
+				"body": "把部分收获和三王山风声递给暗线人物，换一层见不得光但很好用的保护。",
+				"costs": {"intel": 240},
+				"rewards": {"immortal_stone": 300, "materials": 3},
+				"meet_npcs": ["xuanwuzi", "baiwusheng"],
+				"morality_delta": -4,
+				"log": "商家城：你把风声递进暗处，自己也被暗处的人记在了账上。"
+			},
+			{
+				"id": "buy_three_kings_token",
+				"title": "高价买下入山凭证",
+				"body": "放弃眼前大半利润，直接换到一张可靠的入山凭证和一份真实路线图。",
+				"costs": {"immortal_stone": 780, "intel": 160},
+				"rewards": {"materials": 3, "intel": 260},
+				"cultivation_exp": 140,
+				"morality_delta": 0,
+				"log": "商家城：你花了真金白银，换来进入三王山时不必再赌命的一张票。"
+			}
+		]
 	},
 	"three_kings_mountain": {
 		"name": "三王山 / 三叉山",

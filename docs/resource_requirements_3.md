@@ -41,12 +41,12 @@
 
 | 目标路径 | 素材描述 | 建议规格 | 参考/备注 |
 |---|---|---:|---|
-| `res://assets/effects/sheets/runtime_injection_sheet.png` | 注入凡蛊时的青色环形数据/符文闪光，8 帧横排 | 2048x256 PNG 透明底，每帧 256x256 | Q/E/R 注入反馈 |
-| `res://assets/effects/sheets/matrix_overload_sheet.png` | 杀招矩阵过载反噬，红色裂纹爆闪，10 帧横排 | 5120x512 PNG 透明底，每帧 512x512 | 过载伤害 |
-| `res://assets/effects/sheets/defense_barrier_sheet.png` | 稳固凡蛊/防御脚本屏障，青金护罩，8 帧横排 | 2048x256 PNG 透明底，每帧 256x256 | guard 注入与渡劫防御 |
-| `res://assets/effects/sheets/tribulation_lightning_sheet.png` | 青雷天劫劈落，8 帧横排 | 4096x512 PNG 透明底，每帧 512x512 | 灾劫战斗/结算 |
-| `res://assets/effects/sheets/earth_fire_burst_sheet.png` | 地火喷发，8 帧横排 | 4096x512 PNG 透明底，每帧 512x512 | 地火焚窍 |
-| `res://assets/effects/sheets/qi_collapse_wave_sheet.png` | 二气坍缩冲击波，8 帧横排 | 4096x512 PNG 透明底，每帧 512x512 | 仙窍核心压测 |
+| `res://assets/effects/sheets/runtime_injection_sheet.png` | 注入凡蛊时的青色环形数据/符文闪光，短促 1x4 条带 | 1024x256 PNG 透明底，每帧 256x256 | Q/E/R 注入反馈 |
+| `res://assets/effects/sheets/matrix_overload_sheet.png` | 杀招矩阵过载反噬，红色裂纹爆闪，短促 1x4 条带 | 2048x512 PNG 透明底，每帧 512x512 | 过载伤害 |
+| `res://assets/effects/sheets/defense_barrier_sheet.png` | 稳固凡蛊/防御脚本屏障，青金护罩，短促 1x4 条带 | 1024x256 PNG 透明底，每帧 256x256 | guard 注入与渡劫防御 |
+| `res://assets/effects/sheets/tribulation_lightning_sheet.png` | 青雷天劫劈落，短促 1x4 条带 | 2048x512 PNG 透明底，每帧 512x512 | 灾劫战斗/结算 |
+| `res://assets/effects/sheets/earth_fire_burst_sheet.png` | 地火喷发，短促 1x4 条带 | 2048x512 PNG 透明底，每帧 512x512 | 地火焚窍 |
+| `res://assets/effects/sheets/qi_collapse_wave_sheet.png` | 二气坍缩冲击波，短促 1x4 条带 | 2048x512 PNG 透明底，每帧 512x512 | 仙窍核心压测 |
 
 ## 音效
 

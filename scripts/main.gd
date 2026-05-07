@@ -16,6 +16,11 @@ const CultivationService := preload("res://scripts/cultivation_service.gd")
 const AscensionDefs := preload("res://scripts/data/ascension_defs.gd")
 const LongevityService := preload("res://scripts/longevity_service.gd")
 const LongevityDefs := preload("res://scripts/data/longevity_defs.gd")
+const GuService := preload("res://scripts/gu_service.gd")
+const RefineService := preload("res://scripts/refine_service.gd")
+const MapService := preload("res://scripts/map_service.gd")
+const MapDefs := preload("res://scripts/data/map_defs.gd")
+const ExplorationMapViewScene := preload("res://scenes/views/ExplorationMapView.tscn")
 
 const COLOR_BG := Color(0.025, 0.03, 0.028, 1.0)
 const COLOR_PANEL := Color(0.035, 0.040, 0.038, 0.46)
@@ -317,6 +322,7 @@ var state
 var current_screen := ""
 var rng := RandomNumberGenerator.new()
 var root_box: VBoxContainer
+var exploration_view: Control
 var texture_cache: Dictionary = {}
 var font_cache: Dictionary = {}
 
@@ -327,6 +333,8 @@ var create_talent := "散修"
 var create_school := "剑道"
 
 var selected_recipe := "taixu_immortal"
+var selected_refine_mode := "immortal"
+var selected_upgrade_gu := ""
 var refining_feedback_path := ""
 var refining_feedback_text := "炉鼎待启"
 var selected_core := "sword_core"
@@ -372,10 +380,11 @@ func _ready() -> void:
 	TribulationService.ensure_tribulation_state(state)
 	CultivationService.ensure_cultivation_state(state)
 	LongevityService.ensure_longevity_state(state)
+	MapService.ensure_map_state(state)
 	if state.created and LongevityService.is_death_locked(state):
 		_show_longevity()
 	elif state.created:
-		_show_aperture()
+		_show_exploration()
 	else:
 		_show_create()
 
@@ -399,6 +408,7 @@ func _ensure_input_actions() -> void:
 	_add_key_action("cast_3", KEY_3)
 	_add_key_action("cast_4", KEY_4)
 	_add_key_action("cast_5", KEY_5)
+	_add_key_action("interact", KEY_E)
 
 func _add_key_action(action: String, keycode: Key) -> void:
 	if not InputMap.has_action(action):
@@ -416,6 +426,7 @@ func _clear() -> void:
 	for child in get_children():
 		child.queue_free()
 	current_screen = ""
+	exploration_view = null
 	combat_active = false
 	queue_redraw()
 
@@ -593,6 +604,7 @@ func _build_nav(parent: VBoxContainer, active: String) -> void:
 	nav.custom_minimum_size = Vector2(0, 48)
 	nav.add_theme_constant_override("separation", 8)
 	parent.add_child(nav)
+	nav.add_child(_nav_button("探索", Callable(self, "_show_exploration"), active == "exploration"))
 	nav.add_child(_nav_button("仙窍", Callable(self, "_show_aperture"), active == "aperture"))
 	nav.add_child(_nav_button("寿元", Callable(self, "_show_longevity"), active == "longevity" or active == "death"))
 	nav.add_child(_nav_button("修行", Callable(self, "_show_cultivation"), active == "cultivation"))
@@ -604,9 +616,8 @@ func _build_nav(parent: VBoxContainer, active: String) -> void:
 	nav.add_child(market_button)
 	var people_button := _nav_button("人物", Callable(self, "_show_npc"), active == "npc")
 	people_button.disabled = _known_people_count() == 0
-	people_button.tooltip_text = "需要先在剧情中遇到人物。" if people_button.disabled else ""
+	people_button.tooltip_text = "需要先在探索中遇到人物。" if people_button.disabled else ""
 	nav.add_child(people_button)
-	nav.add_child(_nav_button("剧情", Callable(self, "_show_story"), active == "story" or active == "dungeon"))
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nav.add_child(spacer)
@@ -635,6 +646,79 @@ func _known_people() -> Array:
 
 func _known_people_count() -> int:
 	return _known_people().size()
+
+func _show_exploration() -> void:
+	if _redirect_if_death_locked("exploration"):
+		return
+	MapService.ensure_map_state(state)
+	var map_def: Dictionary = MapDefs.map_def(String(state.current_map_id))
+	var shell := _build_shell("探索 / %s" % String(map_def.get("name", "青茅山外域")), "", "exploration")
+	var view := ExplorationMapViewScene.instantiate()
+	exploration_view = view
+	view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	view.custom_minimum_size = Vector2(0, 0)
+	shell.add_child(view)
+	view.trigger_requested.connect(_on_exploration_trigger)
+	view.story_choice_requested.connect(_on_exploration_story_choice)
+	view.save_position_requested.connect(_on_exploration_position_save)
+	view.configure(state)
+	SaveService.save_game(state)
+
+func _on_exploration_position_save(map_id: String, position: Vector2) -> void:
+	if state == null or String(state.current_map_id) != map_id:
+		return
+	MapService.set_map_position(state, position)
+	SaveService.save_game(state)
+
+func _on_exploration_trigger(trigger_id: String) -> void:
+	MapService.ensure_map_state(state)
+	var trigger: Dictionary = MapDefs.trigger(String(state.current_map_id), trigger_id)
+	if trigger.is_empty():
+		return
+	var kind := String(trigger.get("kind", ""))
+	match kind:
+		"map_exit":
+			MapService.enter_map(state, String(trigger.get("target_map", "qingmao_outer")), String(trigger.get("target_spawn", "")))
+			SaveService.save_game(state)
+			_show_exploration()
+		"story":
+			var chapter_id := String(trigger.get("chapter_id", ""))
+			var progress: Dictionary = StoryService.chapter_progress(state, chapter_id)
+			var choices := StoryService.choices(chapter_id)
+			if exploration_view != null and exploration_view.has_method("show_story_choices"):
+				exploration_view.show_story_choices(trigger, choices, bool(progress.get("resolved", false)))
+		"resource", "person", "aperture_node":
+			var result: Dictionary = MapService.resolve_simple_trigger(state, trigger)
+			SaveService.save_game(state)
+			if exploration_view != null and exploration_view.has_method("refresh_from_state"):
+				exploration_view.refresh_from_state()
+				exploration_view.show_message(String(result.get("message", "")))
+		"combat":
+			var encounter: Dictionary = trigger.get("encounter", {})
+			if not encounter.is_empty():
+				MapService.mark_trigger_resolved(state, trigger_id)
+				SaveService.save_game(state)
+				_start_combat(encounter)
+		_:
+			var fallback_result: Dictionary = MapService.resolve_simple_trigger(state, trigger)
+			SaveService.save_game(state)
+			if exploration_view != null and exploration_view.has_method("show_message"):
+				exploration_view.show_message(String(fallback_result.get("message", "")))
+
+func _on_exploration_story_choice(trigger_id: String, chapter_id: String, choice_id: String) -> void:
+	var result: Dictionary = StoryService.resolve_choice(state, chapter_id, choice_id)
+	if bool(result.get("ok", false)):
+		MapService.mark_trigger_resolved(state, trigger_id)
+	state.add_log(String(result.get("message", "")))
+	SaveService.save_game(state)
+	var encounter: Dictionary = result.get("encounter", {})
+	if bool(result.get("ok", false)) and not encounter.is_empty():
+		_start_combat(encounter)
+		return
+	if exploration_view != null and exploration_view.has_method("refresh_from_state"):
+		exploration_view.refresh_from_state()
+		exploration_view.show_message(String(result.get("message", "")))
 
 func _show_locked_feature(title: String, message: String, screen_id: String, background_path: String = "") -> void:
 	var bg := background_path if background_path != "" else String(SCREEN_BACKGROUND_PATHS.get("story", ""))
@@ -970,7 +1054,7 @@ func _enter_world() -> void:
 	TribulationService.ensure_tribulation_state(state)
 	CultivationService.ensure_cultivation_state(state)
 	SaveService.save_game(state)
-	_show_aperture()
+	_show_exploration()
 
 func _show_aperture() -> void:
 	if _redirect_if_death_locked("aperture"):
@@ -1335,6 +1419,14 @@ func _sync_selected_story_chapter() -> void:
 
 func _sync_selected_story_choice() -> void:
 	var choices := StoryService.choices(selected_story_chapter_id)
+	var progress: Dictionary = StoryService.chapter_progress(state, selected_story_chapter_id)
+	var resolved_choice_id := String(progress.get("choice_id", ""))
+	if bool(progress.get("resolved", false)) and resolved_choice_id != "":
+		for raw_choice in choices:
+			var resolved_choice: Dictionary = raw_choice
+			if String(resolved_choice.get("id", "")) == resolved_choice_id:
+				selected_story_choice_id = resolved_choice_id
+				return
 	for raw_choice in choices:
 		var choice_def: Dictionary = raw_choice
 		if String(choice_def.get("id", "")) == selected_story_choice_id:
@@ -1467,6 +1559,8 @@ func _difficulty_display(difficulty_id: String) -> String:
 func _show_refining() -> void:
 	if _redirect_if_death_locked("refining"):
 		return
+	GuService.ensure_instance_state(state)
+	_sync_selected_upgrade_gu()
 	var shell := _build_shell("仙蛊炼制", "res://assets/reference/gu_refining.png", "refining")
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -1474,53 +1568,140 @@ func _show_refining() -> void:
 	shell.add_child(body)
 
 	var left := _add_panel(body, "炼制配方", Vector2(520, 0))
-	for recipe_id in GameState.REFINE_RECIPES.keys():
-		var recipe: Dictionary = GameState.REFINE_RECIPES[recipe_id]
-		left.add_child(_recipe_choice_button(String(recipe_id), recipe, selected_recipe == recipe_id, Callable(self, "_set_recipe").bind(recipe_id)))
+	var left_content := _scroll_box(left)
+	left_content.add_child(_section_label("炉鼎模式"))
+	left_content.add_child(_choice_button("仙蛊合炼\n前置蛊、配方、道痕与机缘共同判定", selected_refine_mode == "immortal", Callable(self, "_set_refine_mode").bind("immortal")))
+	left_content.add_child(_choice_button("凡蛊升转\n提升一至五转凡蛊，失败会损伤蛊虫", selected_refine_mode == "upgrade", Callable(self, "_set_refine_mode").bind("upgrade")))
+	if selected_refine_mode == "upgrade":
+		left_content.add_child(_section_label("可升转蛊虫"))
+		var has_upgrade_target := false
+		for gu_id_value in state.get_gu_ids(""):
+			var gu_id := String(gu_id_value)
+			if GuService.can_upgrade_mortal(state, gu_id):
+				has_upgrade_target = true
+				left_content.add_child(_gu_choice_button(gu_id, "%s\n%s" % [state.get_gu_name(gu_id), state.get_gu_status_text(gu_id)], selected_upgrade_gu == gu_id, Callable(self, "_set_upgrade_gu").bind(gu_id)))
+		if not has_upgrade_target:
+			left_content.add_child(_warning_line("暂无可升转凡蛊。"))
+	else:
+		left_content.add_child(_section_label("合炼链"))
+		for recipe_id in GameState.REFINE_RECIPES.keys():
+			var recipe: Dictionary = GameState.REFINE_RECIPES[recipe_id]
+			left_content.add_child(_recipe_choice_button(String(recipe_id), recipe, selected_recipe == recipe_id, Callable(self, "_set_recipe").bind(recipe_id)))
 
+	var center := _add_panel(body, "炉鼎推演", Vector2(760, 0))
+	var center_content := _scroll_box(center)
+	if selected_refine_mode == "upgrade":
+		_render_upgrade_panel(center_content)
+	else:
+		_render_immortal_refine_panel(center_content)
+
+	var right := _add_panel(body, "蛊虫库存", Vector2(560, 0))
+	var right_content := _scroll_box(right)
+	var summary: Dictionary = GuService.instance_summary(state)
+	right_content.add_child(_text_line("实例蛊虫", "%d 只" % int(summary.get("total", 0))))
+	right_content.add_child(_text_line("凡蛊 / 仙蛊", "%d / %d" % [int(summary.get("mortal", 0)), int(summary.get("immortal", 0))]))
+	right_content.add_child(_text_line("饥饿 / 受损", "%d / %d" % [int(summary.get("hungry", 0)), int(summary.get("wounded", 0))]))
+	right_content.add_child(_inventory_list(""))
+	right_content.add_child(_section_label("炼蛊日志"))
+	right_content.add_child(_log_view(state.logs, 8))
+
+func _render_immortal_refine_panel(center: VBoxContainer) -> void:
 	var recipe: Dictionary = GameState.REFINE_RECIPES[selected_recipe]
 	var result_id := String(recipe["result"])
 	var result_def: Dictionary = GameState.GU_DEFINITIONS[result_id]
-	var center := _add_panel(body, "炉鼎推演", Vector2(760, 0))
+	var preview: Dictionary = RefineService.immortal_refine_preview(state, recipe)
 	center.add_child(_text_line("目标", "%s / %s / %s" % [result_def["name"], result_def["grade"], result_def["school"]]))
-	var unique_note: String = "已被占有，继续炼制必反噬" if bool(result_def.get("unique", false)) and state.unique_gu.has(result_id) else "可尝试炼制"
+	var unique_note: String = "已被占有，继续合炼必反噬" if bool(result_def.get("unique", false)) and state.unique_gu.has(result_id) else "唯一锁空闲"
 	center.add_child(_warning_line(unique_note) if unique_note.begins_with("已") else _text_line("唯一性校验", unique_note))
-	var refine_button := _button("开始炼制", Callable(self, "_try_refine"))
+	var missing: Array = preview.get("missing", [])
+	if not missing.is_empty():
+		center.add_child(_warning_line("合炼链缺口：%s" % _join_strings(missing, " / ")))
+	var refine_button := _button("开始合炼", Callable(self, "_try_refine"))
 	refine_button.custom_minimum_size = Vector2(0, 64)
 	center.add_child(refine_button)
-	if refining_feedback_path == "":
-		center.add_child(_image_or_placeholder(String(REFINING_UI_PATHS["cauldron_idle"]), refining_feedback_text, Color(0.08, 0.07, 0.045, 0.62), Vector2(0, 150)))
-	else:
-		center.add_child(_image_or_placeholder(refining_feedback_path, refining_feedback_text, Color(0.16, 0.10, 0.04, 0.86), Vector2(0, 110)))
-	center.add_child(_image_or_placeholder(String(GU_ICON_PATHS.get(result_id, "")), String(result_def["name"]), Color(0.19, 0.12, 0.05, 0.93), Vector2(0, 230)))
+	_add_refine_feedback(center, result_id, String(result_def["name"]))
 	center.add_child(_text_line("说明", String(recipe["description"])))
+	center.add_child(_text_line("合炼链", String(preview.get("chain_hint", ""))))
 	center.add_child(_text_line("前置蛊虫", _recipe_gu_requirements_text(recipe)))
-	center.add_child(_text_line("基础成功率", "%d%%" % int(float(recipe["base_success"]) * 100.0)))
+	center.add_child(_text_line("推演成功率", "%d%%" % int(float(preview.get("success_rate", recipe.get("base_success", 0.5))) * 100.0)))
 	center.add_child(_text_line("预计耗时", "%d 月" % int(recipe["months"])))
 	center.add_child(_section_label("材料消耗"))
 	for cost_id in recipe["costs"].keys():
 		center.add_child(_text_line(_resource_name(cost_id), "%d / %d" % [state.get_resource(cost_id), int(recipe["costs"][cost_id])]))
 
-	var right := _add_panel(body, "蛊虫库存", Vector2(560, 0))
-	right.add_child(_inventory_list(""))
-	right.add_child(_section_label("炼蛊日志"))
-	right.add_child(_log_view(state.logs, 8))
+func _render_upgrade_panel(center: VBoxContainer) -> void:
+	if selected_upgrade_gu == "":
+		center.add_child(_warning_line("请选择一只凡蛊作为升转对象。"))
+		return
+	var preview: Dictionary = RefineService.upgrade_preview(state, selected_upgrade_gu)
+	var gu_def: Dictionary = GameState.GU_DEFINITIONS.get(selected_upgrade_gu, {})
+	center.add_child(_text_line("目标", "%s / %s" % [state.get_gu_name(selected_upgrade_gu), String(gu_def.get("school", "无相"))]))
+	if not bool(preview.get("ok", false)):
+		center.add_child(_warning_line(String(preview.get("reason", "无法升转"))))
+	else:
+		center.add_child(_text_line("升转路径", "%s → %s" % [state.RANK_NAMES[int(preview.get("rank", 1)) - 1], state.RANK_NAMES[int(preview.get("next_rank", 2)) - 1]]))
+		center.add_child(_text_line("推演成功率", "%d%%" % int(float(preview.get("success_rate", 0.5)) * 100.0)))
+		center.add_child(_text_line("同类引子", "需要 %d 只" % int(preview.get("duplicate_need", 0))))
+	var button := _button("开始升转", Callable(self, "_try_upgrade_gu"))
+	button.custom_minimum_size = Vector2(0, 64)
+	button.disabled = not bool(preview.get("ok", false))
+	center.add_child(button)
+	_add_refine_feedback(center, selected_upgrade_gu, state.get_gu_name(selected_upgrade_gu))
+	center.add_child(_text_line("当前状态", state.get_gu_status_text(selected_upgrade_gu)))
+	if bool(preview.get("ok", false)):
+		center.add_child(_section_label("升转消耗"))
+		var costs: Dictionary = preview.get("costs", {})
+		for cost_id in costs.keys():
+			center.add_child(_text_line(_resource_name(String(cost_id)), "%d / %d" % [state.get_resource(String(cost_id)), int(costs[cost_id])]))
+
+func _add_refine_feedback(parent: VBoxContainer, gu_id: String, display_name: String) -> void:
+	if refining_feedback_path == "":
+		parent.add_child(_image_or_placeholder(String(REFINING_UI_PATHS["cauldron_idle"]), refining_feedback_text, Color(0.08, 0.07, 0.045, 0.62), Vector2(0, 130)))
+	else:
+		parent.add_child(_image_or_placeholder(refining_feedback_path, refining_feedback_text, Color(0.16, 0.10, 0.04, 0.86), Vector2(0, 110)))
+	parent.add_child(_image_or_placeholder(String(GU_ICON_PATHS.get(gu_id, "")), display_name, Color(0.19, 0.12, 0.05, 0.93), Vector2(0, 180)))
 
 func _set_recipe(recipe_id: String) -> void:
 	selected_recipe = recipe_id
+	selected_refine_mode = "immortal"
 	refining_feedback_path = ""
 	refining_feedback_text = "炉鼎待启"
 	_show_refining()
+
+func _set_refine_mode(mode: String) -> void:
+	selected_refine_mode = mode
+	refining_feedback_path = ""
+	refining_feedback_text = "炉鼎待启"
+	_show_refining()
+
+func _set_upgrade_gu(gu_id: String) -> void:
+	selected_upgrade_gu = gu_id
+	selected_refine_mode = "upgrade"
+	refining_feedback_path = ""
+	refining_feedback_text = "升转阵待启"
+	_show_refining()
+
+func _sync_selected_upgrade_gu() -> void:
+	if selected_upgrade_gu != "" and GuService.can_upgrade_mortal(state, selected_upgrade_gu):
+		return
+	selected_upgrade_gu = ""
+	for gu_id_value in state.get_gu_ids(""):
+		var gu_id := String(gu_id_value)
+		if GuService.can_upgrade_mortal(state, gu_id):
+			selected_upgrade_gu = gu_id
+			return
 
 func _try_refine() -> void:
 	var recipe: Dictionary = GameState.REFINE_RECIPES[selected_recipe]
 	var result_id := String(recipe["result"])
 	var result_def: Dictionary = GameState.GU_DEFINITIONS[result_id]
 	var costs: Dictionary = recipe["costs"]
-	if not _has_required_gu(recipe):
+	var preview: Dictionary = RefineService.immortal_refine_preview(state, recipe)
+	var missing: Array = preview.get("missing", [])
+	if not missing.is_empty():
 		refining_feedback_path = ""
-		refining_feedback_text = "前置蛊虫不足"
-		state.add_log("炼蛊失败：缺少合炼所需的前置蛊虫。")
+		refining_feedback_text = "合炼链不足"
+		state.add_log("炼蛊失败：合炼链缺口未补齐。")
 		SaveService.save_game(state)
 		_show_refining()
 		return
@@ -1546,9 +1727,7 @@ func _try_refine() -> void:
 		_show_refining()
 		return
 
-	var dao_bonus: float = float(state.character.get("dao_marks", {}).get(String(result_def.get("school", "")), 35)) / 400.0
-	var aperture_penalty: float = float(state.aperture.get("conflict_rate", 30)) / 500.0
-	var success_rate: float = clampf(float(recipe["base_success"]) + dao_bonus - aperture_penalty, 0.05, 0.95)
+	var success_rate: float = float(preview.get("success_rate", recipe["base_success"]))
 	var roll: float = rng.randf()
 	WorldClock.advance_months(state, months, "炼制%s" % result_def["name"])
 	if roll <= success_rate:
@@ -1562,6 +1741,25 @@ func _try_refine() -> void:
 		state.character["lifespan_days"] = max(0, int(state.character.get("lifespan_days", 0)) - 90)
 		state.character["hp"] = max(1, int(state.character.get("hp", 100)) - 18)
 		state.add_log("炼制失败：炉火失控，材料尽毁并受到反噬。")
+	SaveService.save_game(state)
+	_show_refining()
+
+func _try_upgrade_gu() -> void:
+	if selected_upgrade_gu == "":
+		state.add_log("升转失败：未选择蛊虫。")
+		_show_refining()
+		return
+	var result: Dictionary = RefineService.try_upgrade(state, selected_upgrade_gu, rng)
+	var months := int(result.get("months", 1))
+	if String(result.get("feedback", "")) != "blocked":
+		WorldClock.advance_months(state, months, "升转%s" % state.get_gu_name(selected_upgrade_gu))
+	if bool(result.get("ok", false)):
+		refining_feedback_path = String(EFFECT_IMAGE_PATHS["refine_success"])
+		refining_feedback_text = "升转成功"
+	else:
+		refining_feedback_path = "" if String(result.get("feedback", "")) == "blocked" else String(EFFECT_IMAGE_PATHS["backlash"])
+		refining_feedback_text = "升转受阻" if String(result.get("feedback", "")) == "blocked" else "升转反噬"
+	state.add_log(String(result.get("message", "")))
 	SaveService.save_game(state)
 	_show_refining()
 
@@ -1600,14 +1798,14 @@ func _show_killer_move() -> void:
 
 	var left := _add_panel(body, "蛊虫库", Vector2(520, 0))
 	var left_content := _scroll_box(left)
-	left_content.add_child(_section_label("核心仙蛊"))
+	left_content.add_child(_section_label("核心蛊"))
 	for id in state.get_gu_ids("core"):
 		var def: Dictionary = GameState.GU_DEFINITIONS[id]
-		left_content.add_child(_gu_choice_button(String(id), "%s x%d" % [def["name"], state.gu_inventory[id]], selected_core == id, Callable(self, "_set_core_gu").bind(id)))
-	left_content.add_child(_section_label("辅助凡蛊"))
+		left_content.add_child(_gu_choice_button(String(id), "%s\n%s" % [def["name"], state.get_gu_status_text(String(id))], selected_core == id, Callable(self, "_set_core_gu").bind(id)))
+	left_content.add_child(_section_label("辅助蛊"))
 	for id in state.get_gu_ids("plugin"):
 		var def: Dictionary = GameState.GU_DEFINITIONS[id]
-		left_content.add_child(_gu_choice_button(String(id), "%s x%d" % [def["name"], state.gu_inventory[id]], selected_plugins.has(id), Callable(self, "_toggle_plugin").bind(id)))
+		left_content.add_child(_gu_choice_button(String(id), "%s\n%s" % [def["name"], state.get_gu_status_text(String(id))], selected_plugins.has(id), Callable(self, "_toggle_plugin").bind(id)))
 
 	var move: Dictionary = state.build_killer_move(selected_core, selected_plugins)
 	var center := _add_panel(body, "杀招矩阵", Vector2(760, 0))
@@ -2240,7 +2438,7 @@ func _show_npc() -> void:
 	if _redirect_if_death_locked("npc"):
 		return
 	if _known_people_count() == 0:
-		_show_locked_feature("人物未遇", "你还没有在剧情中真正遇到可交互人物。人物会随剧情抉择、交易和敌对事件出现，也可能死亡。", "npc", String(SCREEN_BACKGROUND_PATHS["npc"]))
+		_show_locked_feature("人物未遇", "你还没有在探索中真正遇到可交互人物。人物会随地点事件、交易和敌对事件出现，也可能死亡。", "npc", String(SCREEN_BACKGROUND_PATHS["npc"]))
 		return
 	_show_dynamic_npc()
 	return
@@ -2311,7 +2509,7 @@ func _start_combat(encounter: Dictionary = {}) -> void:
 	_clear()
 	if encounter.is_empty():
 		state.add_log("战斗必须由剧情、副本、人物事件、夺寿追杀或灾劫触发。")
-		_show_story()
+		_show_exploration()
 		return
 	combat_encounter = encounter.duplicate(true)
 	current_screen = "combat"
@@ -2810,7 +3008,7 @@ func _draw_combat_scene() -> void:
 		var projectile_effect := String(projectile.get("effect", "sword_qi"))
 		var sword_texture: Texture2D = _get_texture(String(EFFECT_IMAGE_PATHS.get(projectile_effect, "")))
 		var projectile_size := Vector2(132, 38)
-		var projectile_frame := Vector2i(512, 128)
+		var projectile_frame := Vector2i(256, 256)
 		var projectile_rotation := vel.angle()
 		if projectile_effect == "fire_burst":
 			projectile_size = Vector2(92, 92)
@@ -2936,12 +3134,17 @@ func _draw_effect_sheet_frame(sheet_path: String, center: Vector2, draw_size: Ve
 	if texture == null:
 		return false
 	var texture_size := texture.get_size()
-	var available_frames := int(floor(texture_size.x / float(frame_size.x)))
+	var effective_frame_size := frame_size
+	if texture_size.y > 0.0:
+		var inferred_side := int(round(texture_size.y))
+		if inferred_side > 0 and int(texture_size.x) >= inferred_side:
+			effective_frame_size = Vector2i(inferred_side, inferred_side)
+	var available_frames := int(floor(texture_size.x / float(effective_frame_size.x)))
 	if available_frames <= 0:
 		return false
 	var count: int = max(1, min(frame_count, available_frames))
 	var frame := int(floor(combat_elapsed * 14.0)) % count
-	var src := Rect2(Vector2(frame * frame_size.x, 0), Vector2(frame_size.x, frame_size.y))
+	var src := Rect2(Vector2(frame * effective_frame_size.x, 0), Vector2(effective_frame_size.x, effective_frame_size.y))
 	draw_set_transform(center, rotation, Vector2.ONE)
 	draw_texture_rect_region(texture, Rect2(-draw_size * 0.5, draw_size), src, color)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -2968,6 +3171,8 @@ func _save_and_log() -> void:
 	state.add_log("手动保存。")
 	SaveService.save_game(state)
 	match current_screen:
+		"exploration":
+			_show_exploration()
 		"aperture":
 			_show_aperture()
 		"cultivation":
@@ -2983,7 +3188,7 @@ func _save_and_log() -> void:
 		"npc":
 			_show_npc()
 		"story", "dungeon":
-			_show_story()
+			_show_exploration()
 		"combat":
 			_build_combat_screen()
 		_:
@@ -3840,7 +4045,7 @@ func _inventory_list(type_filter: String) -> VBoxContainer:
 	for id in state.gu_inventory.keys():
 		var def: Dictionary = GameState.GU_DEFINITIONS.get(id, {})
 		if type_filter == "" or String(def.get("type", "")) == type_filter:
-			box.add_child(_gu_info_row(String(id), "x%d / %s" % [int(state.gu_inventory[id]), String(def.get("grade", ""))]))
+			box.add_child(_gu_info_row(String(id), state.get_gu_status_text(String(id))))
 	return box
 
 func _gu_info_row(id: String, detail: String) -> HBoxContainer:
@@ -3856,7 +4061,7 @@ func _gu_info_row(id: String, detail: String) -> HBoxContainer:
 	name_label.add_theme_color_override("font_color", COLOR_GOLD)
 	box.add_child(name_label)
 	var detail_label := Label.new()
-	detail_label.text = "%s / %s" % [state.get_gu_rank_text(id), detail]
+	detail_label.text = detail
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_label.add_theme_color_override("font_color", Color(0.80, 0.76, 0.66, 1.0))
 	box.add_child(detail_label)

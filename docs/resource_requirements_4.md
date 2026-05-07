@@ -13,9 +13,9 @@
 | `res://assets/ui/cultivation/stage_badge_peak.png` | 巅峰小阶徽章，金色更强但文字区保持清晰 | 180x72 PNG 透明底 | 五转巅峰提示用 |
 | `res://assets/ui/cultivation/breakthrough_card_9slice.png` | 突破操作卡片，可放成本、成功率、风险 | 720x260 PNG 透明底 | 9-slice 边距 48px |
 | `res://assets/ui/cultivation/ascension_phase_card_9slice.png` | 升仙三段试炼卡片 | 680x180 PNG 透明底 | 天地二气/道痕承压/心魔抉择 |
-| `res://assets/effects/sheets/breakthrough_pulse_sheet.png` | 小阶突破成功特效，青金灵光扩散，8帧横排 | 2048x256 PNG 透明底 | 每帧 256x256 |
-| `res://assets/effects/sheets/ascension_qi_surge_sheet.png` | 升仙天地二气倒灌特效，8帧横排 | 4096x512 PNG 透明底 | 每帧 512x512 |
-| `res://assets/effects/sheets/inner_demon_sheet.png` | 心魔试炼黑红幻影冲击，10帧横排 | 5120x512 PNG 透明底 | 每帧 512x512 |
+| `res://assets/effects/sheets/breakthrough_pulse_sheet.png` | 小阶突破成功特效，青金灵光扩散，1x4 条带 | 1024x256 PNG 透明底 | 每帧 256x256 |
+| `res://assets/effects/sheets/ascension_qi_surge_sheet.png` | 升仙天地二气倒灌特效，1x4 条带 | 2048x512 PNG 透明底 | 每帧 512x512 |
+| `res://assets/effects/sheets/inner_demon_sheet.png` | 心魔试炼黑红幻影冲击，1x4 条带 | 2048x512 PNG 透明底 | 每帧 512x512 |
 | `res://assets/audio/sfx/breakthrough_success.ogg` | 小阶突破成功音效 | 1-2 秒 OGG | 后续接入 |
 | `res://assets/audio/sfx/ascension_success.ogg` | 升仙成功音效，压迫后爆发 | 3-5 秒 OGG | 后续接入 |
 | `res://assets/audio/sfx/ascension_failure.ogg` | 升仙失败/反噬音效 | 2-4 秒 OGG | 后续接入 |

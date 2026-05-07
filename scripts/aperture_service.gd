@@ -1,8 +1,10 @@
 extends RefCounted
 
 const GuEcologyDefs := preload("res://scripts/data/gu_ecology_defs.gd")
+const GuService := preload("res://scripts/gu_service.gd")
 
 static func ensure_ecology_state(state) -> void:
+	GuService.ensure_instance_state(state)
 	if typeof(state.gu_ecology) != TYPE_DICTIONARY:
 		state.gu_ecology = {}
 	var ecology: Dictionary = state.gu_ecology
@@ -140,6 +142,7 @@ static func runtime_degrade_gu(state, gu_id: String, pressure: int) -> Dictionar
 	ensure_ecology_state(state)
 	if not state.gu_ecology.has(gu_id):
 		return {}
+	GuService.degrade_gu_instance(state, gu_id, pressure)
 	var entry: Dictionary = state.gu_ecology[gu_id]
 	entry["condition"] = clampi(int(entry.get("condition", 100)) - max(1, pressure), 0, 100)
 	entry["food"] = clampi(int(entry.get("food", 100)) - max(1, int(ceil(float(pressure) * 0.35))), 0, 100)
